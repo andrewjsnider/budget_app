@@ -33,4 +33,22 @@ class TransactionsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Test"
   end
+
+  def test_transactions_can_filter_by_category
+    sign_in(@user)
+
+    account = FactoryBot.create(:account)
+    cat1 = FactoryBot.create(:category, name: "Power")
+    cat2 = FactoryBot.create(:category, name: "Water")
+
+    FactoryBot.create(:transaction, account: account, category: cat1, occurred_on: Date.new(2026, 2, 5), amount_cents: -1000, description: "Electric")
+    FactoryBot.create(:transaction, account: account, category: cat2, occurred_on: Date.new(2026, 2, 6), amount_cents: -1000, description: "Water bill")
+
+    get transactions_path(month: "2026-02", category_id: cat1.id)
+    assert_response :success
+
+    body = @response.body
+    assert_includes body, "Electric"
+    refute_includes body, "Water bill"
+  end
 end

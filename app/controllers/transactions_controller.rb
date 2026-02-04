@@ -4,8 +4,16 @@ class TransactionsController < ApplicationController
     @accounts = Account.where(archived: [false, nil]).order(:name)
     @account = params[:account_id].present? ? @accounts.find { |a| a.id == params[:account_id].to_i } : nil
 
-    scope = Transaction.includes(:category, :account).where(occurred_on: @month..@month.end_of_month).order(occurred_on: :desc, id: :desc)
+    @category = params[:category_id].present? ? Category.find_by(id: params[:category_id]) : nil
+
+    scope = Transaction
+      .includes(:category, :account)
+      .where(occurred_on: @month..@month.end_of_month)
+      .order(occurred_on: :desc, id: :desc)
+
     scope = scope.where(account_id: @account.id) if @account.present?
+    scope = scope.where(category_id: @category.id) if @category.present?
+
     @transactions = scope
   end
 

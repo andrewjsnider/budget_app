@@ -1,5 +1,3 @@
--# app/views/budget_months/show.html.haml
-
 %div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
   %div{ class: "flex items-end justify-between gap-6" }
     %div
@@ -47,14 +45,12 @@
           - @rows.each do |row|
             - cat = row.category
             %tr{ class: "border-t border-stone-200" }
-              %td{ class: "p-3" }= cat.name
+              %td{ class: "p-3" }
+                = link_to cat.name, transactions_path(month: @month.strftime("%Y-%m"), category_id: cat.id), class: "underline"
               %td{ class: "p-3 text-stone-700" }= cat.group.presence || "misc"
 
               %td{ class: "p-3 text-right" }
-                = text_field_tag "assigned[#{cat.id}]",
-                  (row.assigned_cents / 100.0),
-                  inputmode: "decimal",
-                  class: "w-28 border border-stone-300 p-2 text-sm text-right"
+                = text_field_tag "assigned[#{cat.id}]", (row.assigned_cents / 100.0), inputmode: "decimal", class: "w-28 border border-stone-300 p-2 text-sm text-right"
 
               %td{ class: "p-3 text-right text-stone-700" }
                 = number_to_currency(row.activity_cents / 100.0)
