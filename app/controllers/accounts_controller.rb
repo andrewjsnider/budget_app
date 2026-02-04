@@ -1,4 +1,5 @@
 class AccountsController < ApplicationController
+  before_action :set_account, only: %i[edit update destroy]
   def index
     @accounts = Account.where(archived: [false, nil]).order(:name)
   end
@@ -28,12 +29,9 @@ class AccountsController < ApplicationController
   end
 
   def edit
-    @account = Account.find(params[:id])
   end
 
   def update
-    @account = Account.find(params[:id])
-
     if @account.update(account_params)
       redirect_to account_path(@account), notice: "Updated."
     else
@@ -41,7 +39,17 @@ class AccountsController < ApplicationController
     end
   end
 
+  def destroy
+    if @account.destroy
+      redirect_to accounts_path, notice: 'Account deleted'
+    end
+  end
+
   private
+
+  def set_account
+    @account = Account.find(params[:id])
+  end
 
   def account_params
     params.require(:account).permit(:name, :kind, :archived)

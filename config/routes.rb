@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   patch "budget/:month", to: "budget_months#update"
   get  "budget", to: "budget_months#index", as: :budget
 
-  resources :categories, only: [:index, :new, :create, :edit, :update]
+  resources :categories
 
   resources :income_sources, except: [:destroy] do
     resources :income_estimates, except: [:destroy]
@@ -23,7 +23,7 @@ Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
 
-  resources :transactions, except: [:show, :destroy]
+  resources :transactions, except: [:show]
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
