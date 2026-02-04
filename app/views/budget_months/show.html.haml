@@ -1,0 +1,45 @@
+%div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-end justify-between gap-6" }
+    %div
+      %h1{ class: "text-3xl font-semibold" } Budget
+      %p{ class: "mt-2 text-stone-700" }= @month.strftime("%B %Y")
+
+    = form_with url: budget_path, method: :get, class: "flex items-end gap-3" do |f|
+      %div
+        %label{ class: "block text-sm text-stone-700" } Month
+        = month_field_tag :month, @month.strftime("%Y-%m"), class: "border border-stone-300 p-2 text-sm"
+      = f.submit "Go", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+  %div{ class: "mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4" }
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-700" } Income this month
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@income_cents / 100.0)
+
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-700" } Assigned
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@assigned_total_cents / 100.0)
+
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-700" } To Assign
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@to_assign_cents / 100.0)
+
+  = form_with url: budget_month_path(month: @month.strftime("%Y-%m")), method: :patch, class: "mt-10" do
+    %div{ class: "flex items-center justify-between" }
+      %h2{ class: "text-lg font-semibold" } Categories
+      = submit_tag "Save", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+    %div{ class: "mt-3 border border-stone-200" }
+      %table{ class: "w-full text-sm" }
+        %thead
+          %tr{ class: "border-b border-stone-200" }
+            %th{ class: "p-3 text-left" } Category
+            %th{ class: "p-3 text-left" } Group
+            %th{ class: "p-3 text-right" } Assigned
+        %tbody
+          - @expense_categories.each do |cat|
+            - cents = @assigned_by_category_id[cat.id] || 0
+            %tr{ class: "border-t border-stone-200" }
+              %td{ class: "p-3" }= cat.name
+              %td{ class: "p-3 text-stone-700" }= cat.group.presence || "misc"
+              %td{ class: "p-3 text-right" }
+                = text_field_tag "assigned[#{cat.id}]", (cents / 100.0), inputmode: "decimal", class: "w-28 border border-stone-300 p-2 text-sm text-right"
