@@ -3,5 +3,5 @@ class Account < ApplicationRecord
   has_many :reconciliations, dependent: :destroy
 
   validates :name, presence: true
-  validates :kind, inclusion: { in: %w[asset liability] }
+  validates :kind, inclusion: { in: %w[checking savings credit cash] }
 end

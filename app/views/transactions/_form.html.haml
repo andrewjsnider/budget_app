@@ -1,7 +1,7 @@
 - if flash[:alert].present?
   %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
 
-= form_with model: transaction, data: { turbo: false }, class: "space-y-4" do |f|
+= form_with model: transaction, data: { turbo: false }, local: true, class: "space-y-4" do |f|
   = f.date_field :occurred_on, class: "w-full border border-stone-300 p-2 text-sm"
   = f.text_field :description, placeholder: "Description", class: "w-full border border-stone-300 p-2 text-sm"
   = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }

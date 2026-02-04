@@ -1,7 +1,7 @@
 - if flash[:alert].present?
   %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
 
-= form_with model: [@income_source, income_estimate], class: "space-y-4" do |f|
+= form_with model: [@income_source, income_estimate], data: { turbo: false } class: "space-y-4" do |f|
   = f.select :cadence, @cadences, {}, class: "w-full border border-stone-300 p-2 text-sm"
   = f.number_field :interval, min: 1, class: "w-full border border-stone-300 p-2 text-sm"
   = f.number_field :weekday, min: 0, max: 6, placeholder: "Weekday (0=Sun..6=Sat)", class: "w-full border border-stone-300 p-2 text-sm"
