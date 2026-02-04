@@ -1,0 +1,30 @@
+= form_with model: @category, method: :post, turbo: false, local: true do |f|
+  - if @category.errors.any?
+    %div{ class: "mb-4 border border-stone-200 p-3 text-sm" }
+      %div{ class: "font-semibold mb-1" } Could not save:
+      %ul{ class: "list-disc pl-5" }
+        - @category.errors.full_messages.each do |msg|
+          %li= msg
+
+  %div{ class: "space-y-4" }
+    %div
+      %label{ class: "block text-sm text-stone-700" } Name
+      = f.text_field :name, class: "w-full border border-stone-300 p-2"
+
+    %div
+      %label{ class: "block text-sm text-stone-700" } Group
+      = f.text_field :group, class: "w-full border border-stone-300 p-2"
+
+    %div
+      %label{ class: "block text-sm text-stone-700" } Kind
+      = f.select :kind, [["Expense", "expense"], ["Income", "income"]], {}, class: "w-full border border-stone-300 p-2"
+
+    - if f.object.persisted?
+      %div
+        %label{ class: "inline-flex items-center gap-2 text-sm" }
+          = f.check_box :archived
+          Archived
+
+  %div{ class: "mt-6 flex gap-3 items-center" }
+    = f.submit f.object.persisted? ? "Save" : "Create", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+    = link_to "Cancel", categories_path, class: "text-sm underline"

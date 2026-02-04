@@ -29,4 +29,15 @@ class CategoriesTest < ActionDispatch::IntegrationTest
     assert_equal "Bills", category.group
     assert_equal true, category.archived
   end
+
+  def test_create_category
+    sign_in(@user)
+
+    assert_difference -> { Category.count }, 1 do
+      post categories_path, params: { category: { name: "Power", group: "Utilities", kind: "expense" } }
+    end
+
+    assert_redirected_to categories_path
+    assert Category.exists?(name: "Power", group: "Utilities", kind: "expense")
+  end
 end

@@ -13,6 +13,7 @@ class CategoriesController < ApplicationController
     if @category.save
       redirect_to categories_path, notice: "Created."
     else
+      flash.now[:alert] = @category.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
   end
@@ -34,6 +35,6 @@ class CategoriesController < ApplicationController
   private
 
   def category_params
-    params.require(:category).permit(:name, :group, :archived)
+    params.require(:category).permit(:name, :group, :kind, :archived)
   end
 end

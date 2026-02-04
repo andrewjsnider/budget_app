@@ -18,6 +18,5 @@
           %td{ class: "p-3" }= cat.kind
           %td{ class: "p-3" }= cat.archived? ? "Archived" : "Active"
           %td{ class: "p-3 text-right" }
-            = link_to "Edit",
-              edit_category_path(cat),
-              class: "text-sm underline"
+            = link_to "Edit", edit_category_path(cat), class: "text-sm underline"
+
