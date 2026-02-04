@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_04_013520) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_04_014036) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,6 +47,33 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_013520) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "income_estimates", force: :cascade do |t|
+    t.bigint "income_source_id", null: false
+    t.string "cadence"
+    t.integer "interval"
+    t.integer "weekday"
+    t.integer "day_of_month"
+    t.integer "estimated_amount_cents"
+    t.date "start_on"
+    t.date "end_on"
+    t.boolean "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["income_source_id"], name: "index_income_estimates_on_income_source_id"
+  end
+
+  create_table "income_sources", force: :cascade do |t|
+    t.string "name"
+    t.string "kind"
+    t.boolean "active"
+    t.bigint "account_id", null: false
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_income_sources_on_account_id"
+    t.index ["category_id"], name: "index_income_sources_on_category_id"
+  end
+
   create_table "reconciliations", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.date "starts_on"
@@ -56,6 +83,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_013520) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_reconciliations_on_account_id"
+  end
+
+  create_table "recurring_expenses", force: :cascade do |t|
+    t.string "name"
+    t.boolean "active"
+    t.bigint "account_id", null: false
+    t.bigint "category_id", null: false
+    t.string "cadence"
+    t.integer "interval"
+    t.integer "weekday"
+    t.integer "day_of_month"
+    t.integer "estimated_amount_cents"
+    t.date "start_on"
+    t.date "end_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_recurring_expenses_on_account_id"
+    t.index ["category_id"], name: "index_recurring_expenses_on_category_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -92,7 +137,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_013520) do
 
   add_foreign_key "budget_items", "budget_months"
   add_foreign_key "budget_items", "categories"
+  add_foreign_key "income_estimates", "income_sources"
+  add_foreign_key "income_sources", "accounts"
+  add_foreign_key "income_sources", "categories"
   add_foreign_key "reconciliations", "accounts"
+  add_foreign_key "recurring_expenses", "accounts"
+  add_foreign_key "recurring_expenses", "categories"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
