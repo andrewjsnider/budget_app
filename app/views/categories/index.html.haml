@@ -1,0 +1,22 @@
+%div{ class: "max-w-4xl mx-auto px-6 py-10 text-stone-900" }
+  %h1{ class: "text-2xl font-semibold mb-6" } Categories
+
+  %table{ class: "w-full text-sm border border-stone-200" }
+    %thead
+      %tr{ class: "border-b border-stone-200" }
+        %th{ class: "p-3 text-left" } Name
+        %th{ class: "p-3 text-left" } Group
+        %th{ class: "p-3 text-left" } Kind
+        %th{ class: "p-3 text-left" } Status
+        %th{ class: "p-3" }
+    %tbody
+      - @categories.each do |cat|
+        %tr{ class: "border-t border-stone-200" }
+          %td{ class: "p-3" }= cat.name
+          %td{ class: "p-3" }= cat.group.presence || "misc"
+          %td{ class: "p-3" }= cat.kind
+          %td{ class: "p-3" }= cat.archived? ? "Archived" : "Active"
+          %td{ class: "p-3 text-right" }
+            = link_to "Edit",
+              edit_category_path(cat),
+              class: "text-sm underline"
