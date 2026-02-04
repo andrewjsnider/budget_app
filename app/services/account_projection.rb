@@ -12,7 +12,16 @@ class AccountProjection
   end
 
   def starting_balance_cents
-    @account.transactions.where("occurred_on < ?", @from).sum(:amount_cents)
+    rec = last_reconciled
+
+    if rec
+      rec.statement_ending_balance_cents + @account.transactions
+        .where("occurred_on > ?", rec.ends_on)
+        .where("occurred_on < ?", @from)
+        .sum(:amount_cents)
+    else
+      @account.transactions.where("occurred_on < ?", @from).sum(:amount_cents)
+    end
   end
 
   def daily_balances
@@ -119,5 +128,12 @@ class AccountProjection
   def safe_day_in_month(date, day_of_month)
     last = date.end_of_month.day
     Date.new(date.year, date.month, [day_of_month, last].min)
+  end
+
+  def last_reconciled
+    @account.reconciliations
+      .where.not(reconciled_at: nil)
+      .order(ends_on: :desc, reconciled_at: :desc, id: :desc)
+      .first
   end
 end
