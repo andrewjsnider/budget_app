@@ -10,6 +10,7 @@
     = javascript_include_tag "application", "data-turbo-track": "reload", defer: true
 
   %body{ class: "text-stone-900" }
+    = render partial: 'shared/header'
     - if notice.present?
       %div{ class: "max-w-3xl mx-auto px-6 pt-6" }
         %div{ class: "border border-stone-300 p-3 text-sm" }= notice

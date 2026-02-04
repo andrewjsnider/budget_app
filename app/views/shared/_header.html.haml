@@ -1,0 +1,11 @@
+%header{ class: "border-b border-stone-200" }
+  %div{ class: "max-w-5xl mx-auto px-6 py-4 flex items-center justify-between text-stone-900" }
+    %div{ class: "flex items-center gap-6" }
+      %span{ class: "text-lg font-semibold" }= link_to "Budget", budget_month_path(month: Date.current.strftime("%Y-%m")), class: 'hover:text-stone-600'
+      = link_to "Transactions", transactions_path(month: Date.current.strftime("%Y-%m")), class: "text-sm underline"
+      = link_to "Categories", categories_path, class: "text-sm underline"
+      = link_to "Accounts", accounts_path, class: "text-sm underline"
+
+    %div{ class: "flex items-center gap-4" }
+      = link_to "Reports", reports_utilities_path, class: "text-sm underline"
+      = button_to "Sign out", session_path, method: :delete, class: "text-sm underline bg-transparent border-none p-0"
