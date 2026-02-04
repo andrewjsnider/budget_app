@@ -5,6 +5,8 @@ Rails.application.routes.draw do
   patch "budget/:month", to: "budget_months#update"
   get  "budget", to: "budget_months#index", as: :budget
 
+  get "reports/utilities", to: "reports/utilities#index", as: :reports_utilities
+
   resource :session
   resources :passwords, param: :token
 

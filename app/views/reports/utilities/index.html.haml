@@ -1,0 +1,38 @@
+%div{ class: "max-w-6xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-end justify-between gap-6" }
+    %div
+      %h1{ class: "text-3xl font-semibold" } Utilities
+      %p{ class: "mt-2 text-stone-700" } Monthly spend by utility category
+
+    = form_with url: reports_utilities_path, method: :get, class: "flex items-end gap-3" do |f|
+      %div
+        %label{ class: "block text-sm text-stone-700" } From
+        = month_field_tag :from, @from.strftime("%Y-%m"), class: "border border-stone-300 p-2 text-sm"
+      %div
+        %label{ class: "block text-sm text-stone-700" } To
+        = month_field_tag :to, @to.strftime("%Y-%m"), class: "border border-stone-300 p-2 text-sm"
+      = f.submit "Go", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+  - if @utility_categories.empty?
+    %div{ class: "mt-10 border border-stone-200 p-4 text-stone-700" }
+      No utility categories found. Add categories with group = utilities.
+  - else
+    %div{ class: "mt-10 border border-stone-200" }
+      %table{ class: "w-full text-sm" }
+        %thead
+          %tr{ class: "border-b border-stone-200" }
+            %th{ class: "p-3 text-left" } Month
+            - @utility_categories.each do |cat|
+              %th{ class: "p-3 text-right" }= cat.name
+            %th{ class: "p-3 text-right" } Total
+        %tbody
+          - @months.each do |month|
+            - row_total_cents = 0
+            %tr{ class: "border-t border-stone-200" }
+              %td{ class: "p-3" }= month.strftime("%Y-%m")
+              - @utility_categories.each do |cat|
+                - cents = @by_month_and_category[[month, cat.id]] || 0
+                - cents = cents.abs
+                - row_total_cents += cents
+                %td{ class: "p-3 text-right" }= number_to_currency(cents / 100.0)
+              %td{ class: "p-3 text-right font-semibold" }= number_to_currency(row_total_cents / 100.0)
