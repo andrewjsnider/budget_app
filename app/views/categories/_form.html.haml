@@ -1,4 +1,4 @@
-= form_with model: @category, method: :post, turbo: false, local: true do |f|
+= form_with model: @category, data: { turbo: false }, local: true do |f|
   - if @category.errors.any?
     %div{ class: "mb-4 border border-stone-200 p-3 text-sm" }
       %div{ class: "font-semibold mb-1" } Could not save:
