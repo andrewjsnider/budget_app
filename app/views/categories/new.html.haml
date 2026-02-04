@@ -1,0 +1,22 @@
+-# app/views/categories/new.html.haml
+
+%div{ class: "max-w-xl mx-auto px-6 py-10 text-stone-900" }
+  %h1{ class: "text-2xl font-semibold mb-6" } New Category
+
+  = form_with model: @category, local: true do |f|
+    %div{ class: "space-y-4" }
+      %div
+        %label{ class: "block text-sm text-stone-700" } Name
+        = f.text_field :name, class: "w-full border border-stone-300 p-2"
+
+      %div
+        %label{ class: "block text-sm text-stone-700" } Group
+        = f.text_field :group, class: "w-full border border-stone-300 p-2"
+
+      %div
+        %label{ class: "block text-sm text-stone-700" } Kind
+        = f.select :kind, [["Expense", "expense"], ["Income", "income"]], {}, class: "w-full border border-stone-300 p-2"
+
+    %div{ class: "mt-6 flex gap-3 items-center" }
+      = f.submit "Create", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+      = link_to "Cancel", categories_path, class: "text-sm underline"

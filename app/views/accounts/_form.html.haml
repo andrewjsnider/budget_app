@@ -1,0 +1,23 @@
+= form_with model: @account, local: true do |f|
+  %div{ class: "space-y-4" }
+    %div
+      %label{ class: "block text-sm text-stone-700" } Name
+      = f.text_field :name, class: "w-full border border-stone-300 p-2"
+
+    %div
+      %label{ class: "block text-sm text-stone-700" } Kind
+      = f.select :kind,
+        [["Checking", "checking"], ["Savings", "savings"], ["Credit Card", "credit"], ["Cash", "cash"]],
+        {},
+        class: "w-full border border-stone-300 p-2"
+
+    - if f.object.persisted?
+      %div
+        %label{ class: "inline-flex items-center gap-2 text-sm" }
+          = f.check_box :archived
+          Archived
+
+  %div{ class: "mt-6 flex gap-3 items-center" }
+    = f.submit f.object.persisted? ? "Save" : "Create",
+      class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+    = link_to "Cancel", accounts_path, class: "text-sm underline"

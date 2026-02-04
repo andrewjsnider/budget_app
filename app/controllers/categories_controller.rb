@@ -3,6 +3,20 @@ class CategoriesController < ApplicationController
     @categories = Category.order(:kind, :group, :name)
   end
 
+  def new
+    @category = Category.new
+  end
+
+  def create
+    @category = Category.new(category_params)
+
+    if @category.save
+      redirect_to categories_path, notice: "Created."
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
   def edit
     @category = Category.find(params[:id])
   end
