@@ -1,0 +1,22 @@
+- if flash[:alert].present?
+  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+
+= form_with model: recurring_expense, class: "space-y-4" do |f|
+  = f.text_field :name, placeholder: "Name", class: "w-full border border-stone-300 p-2 text-sm"
+
+  %div{ class: "grid grid-cols-1 sm:grid-cols-2 gap-4" }
+    = f.collection_select :category_id, @categories, :id, :name, { prompt: "Category" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+    = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+
+  %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4" }
+    = f.select :cadence, @cadences, {}, class: "w-full border border-stone-300 p-2 text-sm"
+    = f.number_field :interval, min: 1, class: "w-full border border-stone-300 p-2 text-sm"
+    = f.text_field :estimated_amount_cents, placeholder: "Amount cents (eg -5000)", class: "w-full border border-stone-300 p-2 text-sm"
+
+  %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4" }
+    = f.date_field :start_on, class: "w-full border border-stone-300 p-2 text-sm"
+    = f.date_field :end_on, class: "w-full border border-stone-300 p-2 text-sm"
+    = f.check_box :active
+    %span{ class: "text-sm text-stone-700" } Active
+
+  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"

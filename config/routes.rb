@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   get "reports/projection/:account_id", to: "reports/projections#show", as: :reports_projection
   get "reports/utilities", to: "reports/utilities#index", as: :reports_utilities
 
+  resources :recurring_expenses, except: [:destroy]
   resource :session
   resources :passwords, param: :token
 
