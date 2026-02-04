@@ -29,4 +29,35 @@ class BudgetMonthsTest < ActionDispatch::IntegrationTest
     item = budget_month.budget_items.find_by!(category_id: cat.id)
     assert_equal 5000, item.assigned_cents
   end
+
+  def test_budget_month_activity_and_available
+    sign_in(@user)
+
+    category = FactoryBot.create(:category, kind: "expense", group: "Utilities", archived: false)
+    account  = FactoryBot.create(:account)
+
+    month = Date.new(2026, 2, 1)
+
+    BudgetMonth.create!(month: month).tap do |bm|
+      bm.budget_items.create!(category: category, assigned_cents: 10_000)
+    end
+
+    Transaction.create!(
+      occurred_on: month + 9,
+      description: "Electric",
+      amount_cents: -2_500,
+      category: category,
+      account: account,
+      cleared: true
+    )
+
+    get budget_month_path(month: "2026-02")
+    assert_response :success
+
+    assert_includes body, category.name
+    assert_includes body, "Utilities"
+    assert_includes body, "$100.00"
+    assert_includes body, "-$25.00"
+    assert_includes body, "$75.00"
+  end
 end

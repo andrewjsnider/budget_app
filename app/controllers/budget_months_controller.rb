@@ -16,6 +16,12 @@ class BudgetMonthsController < ApplicationController
 
     @assigned_total_cents = @budget_month.budget_items.sum(:assigned_cents)
     @to_assign_cents = @income_cents - @assigned_total_cents
+
+    @rows = BudgetMonthCategoryRows.new(
+      month: @month,
+      expense_categories: @expense_categories,
+      assigned_by_category_id: @assigned_by_category_id
+    ).rows
   end
 
   def update

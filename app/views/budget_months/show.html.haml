@@ -1,3 +1,5 @@
+-# app/views/budget_months/show.html.haml
+
 %div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
   %div{ class: "flex items-end justify-between gap-6" }
     %div
@@ -7,8 +9,11 @@
     = form_with url: budget_path, method: :get, class: "flex items-end gap-3" do |f|
       %div
         %label{ class: "block text-sm text-stone-700" } Month
-        = month_field_tag :month, @month.strftime("%Y-%m"), class: "border border-stone-300 p-2 text-sm"
-      = f.submit "Go", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = month_field_tag :month,
+          @month.strftime("%Y-%m"),
+          class: "border border-stone-300 p-2 text-sm"
+      = f.submit "Go",
+        class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
 
   %div{ class: "mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4" }
     %div{ class: "border border-stone-200 p-4" }
@@ -26,7 +31,8 @@
   = form_with url: budget_month_path(month: @month.strftime("%Y-%m")), method: :patch, class: "mt-10" do
     %div{ class: "flex items-center justify-between" }
       %h2{ class: "text-lg font-semibold" } Categories
-      = submit_tag "Save", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+      = submit_tag "Save",
+        class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
 
     %div{ class: "mt-3 border border-stone-200" }
       %table{ class: "w-full text-sm" }
@@ -35,11 +41,23 @@
             %th{ class: "p-3 text-left" } Category
             %th{ class: "p-3 text-left" } Group
             %th{ class: "p-3 text-right" } Assigned
+            %th{ class: "p-3 text-right" } Activity
+            %th{ class: "p-3 text-right" } Available
         %tbody
-          - @expense_categories.each do |cat|
-            - cents = @assigned_by_category_id[cat.id] || 0
+          - @rows.each do |row|
+            - cat = row.category
             %tr{ class: "border-t border-stone-200" }
               %td{ class: "p-3" }= cat.name
               %td{ class: "p-3 text-stone-700" }= cat.group.presence || "misc"
+
               %td{ class: "p-3 text-right" }
-                = text_field_tag "assigned[#{cat.id}]", (cents / 100.0), inputmode: "decimal", class: "w-28 border border-stone-300 p-2 text-sm text-right"
+                = text_field_tag "assigned[#{cat.id}]",
+                  (row.assigned_cents / 100.0),
+                  inputmode: "decimal",
+                  class: "w-28 border border-stone-300 p-2 text-sm text-right"
+
+              %td{ class: "p-3 text-right text-stone-700" }
+                = number_to_currency(row.activity_cents / 100.0)
+
+              %td{ class: "p-3 text-right font-semibold" }
+                = number_to_currency(row.available_cents / 100.0)
