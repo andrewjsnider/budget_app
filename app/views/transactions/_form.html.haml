@@ -1,0 +1,10 @@
+- if flash[:alert].present?
+  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+
+= form_with model: transaction, class: "space-y-4" do |f|
+  = f.date_field :occurred_on, class: "w-full border border-stone-300 p-2 text-sm"
+  = f.text_field :description, placeholder: "Description", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+  = f.collection_select :category_id, @categories, :id, :name, { prompt: "Category" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+  = f.text_field :amount_cents, placeholder: "Amount cents (eg -1299, 50000)", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"

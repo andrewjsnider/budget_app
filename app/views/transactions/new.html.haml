@@ -1,0 +1,6 @@
+%div{ class: "max-w-3xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-center justify-between mb-6" }
+    %h1{ class: "text-3xl font-semibold" } New transaction
+    = link_to "Back", transactions_path, class: "text-sm underline"
+
+  = render "form", transaction: @transaction

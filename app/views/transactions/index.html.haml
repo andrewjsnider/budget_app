@@ -1,0 +1,40 @@
+%div{ class: "max-w-6xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-end justify-between gap-6" }
+    %div
+      %h1{ class: "text-3xl font-semibold" } Transactions
+      %p{ class: "mt-2 text-stone-700" }= @month.strftime("%B %Y")
+
+    %div{ class: "flex items-end gap-3" }
+      = form_with url: transactions_path, method: :get, class: "flex items-end gap-3" do |f|
+        %div
+          %label{ class: "block text-sm text-stone-700" } Month
+          = month_field_tag :month, @month.strftime("%Y-%m"), class: "border border-stone-300 p-2 text-sm"
+        %div
+          %label{ class: "block text-sm text-stone-700" } Account
+          = select_tag :account_id, options_from_collection_for_select(@accounts, :id, :name, @account&.id), include_blank: "All", class: "border border-stone-300 p-2 text-sm"
+        = f.submit "Go", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+      = link_to "New", new_transaction_path, class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+  - if flash[:notice].present?
+    %div{ class: "mt-6 border border-stone-300 p-3 text-sm" }= flash[:notice]
+
+  %div{ class: "mt-6 border border-stone-200" }
+    %table{ class: "w-full text-sm" }
+      %thead
+        %tr{ class: "border-b border-stone-200" }
+          %th{ class: "p-3 text-left" } Date
+          %th{ class: "p-3 text-left" } Description
+          %th{ class: "p-3 text-left" } Account
+          %th{ class: "p-3 text-left" } Category
+          %th{ class: "p-3 text-right" } Amount
+          %th{ class: "p-3 text-right" }
+      %tbody
+        - @transactions.each do |t|
+          %tr{ class: "border-t border-stone-200" }
+            %td{ class: "p-3" }= t.occurred_on
+            %td{ class: "p-3" }= t.description
+            %td{ class: "p-3" }= t.account&.name
+            %td{ class: "p-3" }= t.category&.name
+            %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents.to_i / 100.0)
+            %td{ class: "p-3 text-right" }= link_to "Edit", edit_transaction_path(t), class: "text-sm underline"
