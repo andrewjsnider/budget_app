@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   root to: "dashboard#show"
 
+  resources :accounts, only: [:index, :show] do
+    resources :reconciliations, only: [:new, :create, :show]
+  end
+
   get  "budget/:month", to: "budget_months#show",   as: :budget_month
   patch "budget/:month", to: "budget_months#update"
   get  "budget", to: "budget_months#index", as: :budget

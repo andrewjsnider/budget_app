@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_04_013434) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_04_013520) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,6 +47,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_013434) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "reconciliations", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.date "starts_on"
+    t.date "ends_on"
+    t.integer "statement_ending_balance_cents"
+    t.datetime "reconciled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_reconciliations_on_account_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "ip_address"
@@ -81,6 +92,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_013434) do
 
   add_foreign_key "budget_items", "budget_months"
   add_foreign_key "budget_items", "categories"
+  add_foreign_key "reconciliations", "accounts"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"

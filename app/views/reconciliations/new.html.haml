@@ -1,0 +1,39 @@
+%div{ class: "max-w-4xl mx-auto px-6 py-10 text-stone-900" }
+  %h1{ class: "text-3xl font-semibold" } Reconcile
+  %p{ class: "mt-2 text-stone-700" }= @account.name
+
+  - if flash[:alert].present?
+    %div{ class: "mt-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+
+  = form_with url: account_reconciliations_path(@account), method: :post, class: "mt-6 space-y-4" do
+    = hidden_field_tag :starts_on, @starts_on
+    = hidden_field_tag :ends_on, @ends_on
+
+    %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4" }
+      %div
+        %div{ class: "text-sm text-stone-700" } Starts on
+        %div{ class: "mt-1 font-semibold" }= @starts_on
+      %div
+        %div{ class: "text-sm text-stone-700" } Ends on
+        %div{ class: "mt-1 font-semibold" }= @ends_on
+      %div
+        %label{ class: "block text-sm text-stone-700" } Statement ending balance
+        = text_field_tag :statement_ending_balance, nil, inputmode: "decimal", class: "mt-1 w-full border border-stone-300 p-2 text-sm text-right"
+
+    %div{ class: "border border-stone-200" }
+      %table{ class: "w-full text-sm" }
+        %thead
+          %tr{ class: "border-b border-stone-200" }
+            %th{ class: "p-3 text-left" } Clear
+            %th{ class: "p-3 text-left" } Date
+            %th{ class: "p-3 text-left" } Description
+            %th{ class: "p-3 text-right" } Amount
+        %tbody
+          - @transactions.each do |t|
+            %tr{ class: "border-t border-stone-200" }
+              %td{ class: "p-3" }= check_box_tag "cleared_transaction_ids[]", t.id, t.cleared
+              %td{ class: "p-3" }= t.occurred_on
+              %td{ class: "p-3" }= t.description
+              %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents / 100.0)
+
+    = submit_tag "Reconcile", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
