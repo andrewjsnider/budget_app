@@ -5,5 +5,6 @@ FactoryBot.define do
     amount_cents { -5000 }
     account_name { "Checking" }
     association :category
+    association :account
   end
 end
