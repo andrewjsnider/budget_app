@@ -1,0 +1,20 @@
+%div{ class: "min-h-screen flex items-center justify-center bg-stone-50" }
+  %div{ class: "w-full max-w-md bg-white border border-stone-200 p-8 text-stone-900" }
+    %h1{ class: "text-2xl font-semibold" } Sign in
+
+    - if flash[:alert].present?
+      %p{ class: "mt-4 text-sm text-red-600" }= flash[:alert]
+
+    - if flash[:notice].present?
+      %p{ class: "mt-4 text-sm text-green-700" }= flash[:notice]
+
+    = form_tag session_path, method: :post, class: "mt-6 space-y-4", data: { turbo: false } do
+      %div
+        %label{ class: "block text-sm font-medium text-stone-700" } Email address
+        = email_field_tag :email_address, params[:email_address], required: true, autofocus: true, autocomplete: "username", class: "mt-1 w-full border border-stone-300 px-3 py-2"
+
+      %div
+        %label{ class: "block text-sm font-medium text-stone-700" } Password
+        = password_field_tag :password, nil, required: true, autocomplete: "current-password", class: "mt-1 w-full border border-stone-300 px-3 py-2"
+
+      = submit_tag "Sign in", class: "w-full border border-stone-900 bg-stone-900 text-white px-4 py-2 hover:bg-stone-800"
