@@ -1,0 +1,17 @@
+- if flash[:alert].present?
+  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+
+= form_with model: [@income_source, income_estimate], class: "space-y-4" do |f|
+  = f.select :cadence, @cadences, {}, class: "w-full border border-stone-300 p-2 text-sm"
+  = f.number_field :interval, min: 1, class: "w-full border border-stone-300 p-2 text-sm"
+  = f.number_field :weekday, min: 0, max: 6, placeholder: "Weekday (0=Sun..6=Sat)", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.number_field :day_of_month, min: 1, max: 31, placeholder: "Day of month (for monthly)", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.text_field :estimated_amount_cents, placeholder: "Amount cents (eg 20000)", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.date_field :start_on, class: "w-full border border-stone-300 p-2 text-sm"
+  = f.date_field :end_on, class: "w-full border border-stone-300 p-2 text-sm"
+
+  %label{ class: "inline-flex items-center gap-2 text-sm text-stone-700" }
+    = f.check_box :active
+    Active
+
+  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"

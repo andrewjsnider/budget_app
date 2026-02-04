@@ -1,0 +1,26 @@
+%div{ class: "max-w-6xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-center justify-between" }
+    %div
+      %h1{ class: "text-3xl font-semibold" } Pay schedule
+      %p{ class: "mt-2 text-stone-700" }= @income_source.name
+    = link_to "New", new_income_source_income_estimate_path(@income_source), class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+  %div{ class: "mt-6 border border-stone-200" }
+    %table{ class: "w-full text-sm" }
+      %thead
+        %tr{ class: "border-b border-stone-200" }
+          %th{ class: "p-3 text-left" } Cadence
+          %th{ class: "p-3 text-left" } Interval
+          %th{ class: "p-3 text-left" } Weekday
+          %th{ class: "p-3 text-left" } Day
+          %th{ class: "p-3 text-right" } Amount
+          %th{ class: "p-3 text-right" }
+      %tbody
+        - @income_estimates.each do |e|
+          %tr{ class: "border-t border-stone-200" }
+            %td{ class: "p-3" }= e.cadence
+            %td{ class: "p-3" }= e.interval
+            %td{ class: "p-3" }= e.weekday
+            %td{ class: "p-3" }= e.day_of_month
+            %td{ class: "p-3 text-right" }= number_to_currency(e.estimated_amount_cents.to_i / 100.0)
+            %td{ class: "p-3 text-right" }= link_to "Edit", edit_income_source_income_estimate_path(@income_source, e), class: "text-sm underline"

@@ -1,0 +1,9 @@
+%div{ class: "max-w-3xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-center justify-between mb-2" }
+    %h1{ class: "text-3xl font-semibold" } New pay schedule
+    = link_to "Back", income_source_income_estimates_path(@income_source), class: "text-sm underline"
+
+  %p{ class: "mt-2 text-stone-700" }= @income_source.name
+
+  %div{ class: "mt-6" }
+    = render "form", income_estimate: @income_estimate

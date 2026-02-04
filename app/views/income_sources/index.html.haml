@@ -1,0 +1,25 @@
+%div{ class: "max-w-6xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-center justify-between" }
+    %h1{ class: "text-3xl font-semibold" } Income sources
+    = link_to "New", new_income_source_path, class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+  %div{ class: "mt-6 border border-stone-200" }
+    %table{ class: "w-full text-sm" }
+      %thead
+        %tr{ class: "border-b border-stone-200" }
+          %th{ class: "p-3 text-left" } Name
+          %th{ class: "p-3 text-left" } Kind
+          %th{ class: "p-3 text-left" } Account
+          %th{ class: "p-3 text-left" } Category
+          %th{ class: "p-3 text-right" }
+      %tbody
+        - @income_sources.each do |s|
+          %tr{ class: "border-t border-stone-200" }
+            %td{ class: "p-3" }= s.name
+            %td{ class: "p-3" }= s.kind
+            %td{ class: "p-3" }= s.account&.name
+            %td{ class: "p-3" }= s.category&.name
+            %td{ class: "p-3 text-right" }
+              = link_to "Edit", edit_income_source_path(s), class: "text-sm underline"
+              %span{ class: "mx-2 text-stone-400" } |
+              = link_to "Pay schedule", income_source_income_estimates_path(s), class: "text-sm underline"

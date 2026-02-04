@@ -9,10 +9,15 @@ Rails.application.routes.draw do
   patch "budget/:month", to: "budget_months#update"
   get  "budget", to: "budget_months#index", as: :budget
 
+  resources :income_sources, except: [:destroy] do
+    resources :income_estimates, except: [:destroy]
+  end
+
+  resources :recurring_expenses, except: [:destroy]
+
   get "reports/projection/:account_id", to: "reports/projections#show", as: :reports_projection
   get "reports/utilities", to: "reports/utilities#index", as: :reports_utilities
 
-  resources :recurring_expenses, except: [:destroy]
   resource :session
   resources :passwords, param: :token
 

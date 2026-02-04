@@ -1,0 +1,14 @@
+- if flash[:alert].present?
+  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+
+= form_with model: income_source, class: "space-y-4" do |f|
+  = f.text_field :name, placeholder: "Name (Job A, Side Biz)", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.text_field :kind, placeholder: "Kind (w2, 1099, biz)", class: "w-full border border-stone-300 p-2 text-sm"
+  = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+  = f.collection_select :category_id, @income_categories, :id, :name, { prompt: "Income category" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+
+  %label{ class: "inline-flex items-center gap-2 text-sm text-stone-700" }
+    = f.check_box :active
+    Active
+
+  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
