@@ -5,7 +5,7 @@ class IncomeEstimatesTest < ActionDispatch::IntegrationTest
     @user = FactoryBot.create(:user, password: "password123", password_confirmation: "password123")
     sign_in(@user)
 
-    @account = FactoryBot.create(:account, name: "Checking", kind: "asset", archived: false)
+    @account = FactoryBot.create(:account, name: "Checking", archived: false)
     @income_cat = FactoryBot.create(:category, name: "Job Income", kind: "income", group: "income", archived: false)
     @source = IncomeSource.create!(name: "Job A", kind: "w2", active: true, account: @account, category: @income_cat)
   end

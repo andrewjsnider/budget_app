@@ -5,7 +5,7 @@ class RecurringExpensesTest < ActionDispatch::IntegrationTest
     @user = FactoryBot.create(:user)
     sign_in(@user)
 
-    @account = FactoryBot.create(:account, name: "Checking", kind: "asset", archived: false)
+    @account = FactoryBot.create(:account, name: "Checking", archived: false)
     @category = FactoryBot.create(:category, name: "Sewer", kind: "expense", group: "utilities", archived: false)
   end
 

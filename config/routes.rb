@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   root to: "dashboard#show"
 
-  resources :accounts do
+  resources :accounts, except: [:destroy] do
     resources :reconciliations, only: [:new, :create, :show]
   end
 

@@ -8,7 +8,7 @@ class AccountsTest < ActionDispatch::IntegrationTest
   def test_accounts_index_and_show
     sign_in @user
 
-    account = FactoryBot.create(:account, name: "Checking", archived: false)
+    account = FactoryBot.create(:account, name: "Checking", kind: 'checking', archived: false)
     category = FactoryBot.create(:category, name: "Groceries")
 
     FactoryBot.create(

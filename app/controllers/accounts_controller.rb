@@ -1,5 +1,6 @@
 class AccountsController < ApplicationController
-  before_action :set_account, only: %i[edit update destroy]
+  before_action :set_account, only: %i[edit update]
+
   def index
     @accounts = Account.where(archived: [false, nil]).order(:name)
   end
@@ -36,12 +37,6 @@ class AccountsController < ApplicationController
       redirect_to account_path(@account), notice: "Updated."
     else
       render :edit, status: :unprocessable_entity
-    end
-  end
-
-  def destroy
-    if @account.destroy
-      redirect_to accounts_path, notice: 'Account deleted'
     end
   end
 
