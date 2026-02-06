@@ -1,0 +1,124 @@
+- if flash[:alert].present?
+  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+
+:ruby
+  # Keep these examples in sync with whatever cadences you actually support.
+  # If your app uses different cadence strings, update the values below.
+  examples = [
+    {
+      title: "Example 1: Biweekly paycheck (every 2 weeks on Friday)",
+      fields: [
+        { label: "Cadence", value: "weekly" },
+        { label: "Interval", value: "2" },
+        { label: "Weekday", value: "5 (Friday)" },
+        { label: "Day of month", value: "leave blank" },
+        { label: "Amount cents", value: "250000 (=$2,500.00)" },
+        { label: "Start on", value: Date.current.beginning_of_month.strftime("%Y-%m-%d") },
+        { label: "End on", value: "leave blank" },
+        { label: "Active", value: "checked" }
+      ]
+    },
+    {
+      title: "Example 2: Monthly paycheck (on the 1st of each month)",
+      fields: [
+        { label: "Cadence", value: "monthly" },
+        { label: "Interval", value: "1" },
+        { label: "Weekday", value: "leave blank" },
+        { label: "Day of month", value: "1" },
+        { label: "Amount cents", value: "320000 (=$3,200.00)" },
+        { label: "Start on", value: Date.current.beginning_of_month.strftime("%Y-%m-%d") },
+        { label: "End on", value: "leave blank" },
+        { label: "Active", value: "checked" }
+      ]
+    },
+    {
+      title: "Example 3: Weekly side gig (every week on Tuesday, ends this month)",
+      fields: [
+        { label: "Cadence", value: "weekly" },
+        { label: "Interval", value: "1" },
+        { label: "Weekday", value: "2 (Tuesday)" },
+        { label: "Day of month", value: "leave blank" },
+        { label: "Amount cents", value: "45000 (=$450.00)" },
+        { label: "Start on", value: Date.current.beginning_of_month.strftime("%Y-%m-%d") },
+        { label: "End on", value: Date.current.end_of_month.strftime("%Y-%m-%d") },
+        { label: "Active", value: "checked" }
+      ]
+    }
+  ]
+
+  # Small helper for consistent formatting
+  def example_row(label, value)
+    %Q(
+      %tr
+        %td{ class: "py-1 pr-4 text-stone-600 whitespace-nowrap" } #{label}
+        %td{ class: "py-1 text-stone-900" } #{value}
+    )
+  end
+
+= form_with model: [@income_source, income_estimate], data: { turbo: false }, class: "space-y-4" do |f|
+  %div
+    %label{ class: "block text-sm text-stone-700" } Cadence
+    %p{ class: "mt-1 text-xs text-stone-600" } Pick weekly for paychecks every N weeks. Pick monthly for a fixed day like the 1st or 15th.
+    = f.select :cadence, @cadences, {}, class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+
+  %div
+    %label{ class: "block text-sm text-stone-700" } Interval
+    %p{ class: "mt-1 text-xs text-stone-600" } Example: 2 means every 2 weeks (biweekly) or every 2 months.
+    = f.number_field :interval, min: 1, class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+
+  %div
+    %label{ class: "block text-sm text-stone-700" } Weekday (weekly only)
+    %p{ class: "mt-1 text-xs text-stone-600" } 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat. Example: Friday is 5.
+    = f.number_field :weekday, min: 0, max: 6, placeholder: "e.g. 5 for Friday", class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+
+  %div
+    %label{ class: "block text-sm text-stone-700" } Day of month (monthly only)
+    %p{ class: "mt-1 text-xs text-stone-600" } Example: 1 means the 1st of every month. Leave blank for weekly.
+    = f.number_field :day_of_month, min: 1, max: 31, placeholder: "e.g. 1", class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+
+  %div
+    %label{ class: "block text-sm text-stone-700" } Estimated amount (cents)
+    %p{ class: "mt-1 text-xs text-stone-600" } Example: 250000 means $2,500.00.
+    = f.text_field :estimated_amount_cents, placeholder: "e.g. 250000", class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+
+  %div{ class: "grid grid-cols-1 sm:grid-cols-2 gap-4" }
+    %div
+      %label{ class: "block text-sm text-stone-700" } Start on
+      %p{ class: "mt-1 text-xs text-stone-600" } First day this estimate is active.
+      = f.date_field :start_on, class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+    %div
+      %label{ class: "block text-sm text-stone-700" } End on (optional)
+      %p{ class: "mt-1 text-xs text-stone-600" } Leave blank if it continues indefinitely.
+      = f.date_field :end_on, class: "mt-1 w-full border border-stone-300 p-2 text-sm"
+
+  %label{ class: "inline-flex items-center gap-2 text-sm text-stone-700" }
+    = f.check_box :active
+    Active
+
+  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+%div{ class: "my-6 border border-stone-200 p-4" }
+  %h2{ class: "text-base font-semibold" } What to enter (examples)
+  %p{ class: "mt-1 text-sm text-stone-700" }
+    Use these as templates. For weekly cadences, fill in Weekday and leave Day of month blank. For monthly cadences, fill in Day of month and leave Weekday blank.
+
+  %div{ class: "mt-4 space-y-4" }
+    - examples.each do |ex|
+      %div{ class: "border border-stone-200 p-4" }
+        %div{ class: "text-sm font-semibold text-stone-900" }= ex[:title]
+        %table{ class: "mt-3 w-full text-sm" }
+          %tbody
+            - ex[:fields].each do |row|
+              %tr
+                %td{ class: "py-1 pr-4 text-stone-600 whitespace-nowrap" }= row[:label]
+                %td{ class: "py-1 text-stone-900" }= row[:value]
+
+
+%div{ class: "mb-6 border border-stone-200 p-4" }
+  %h2{ class: "text-base font-semibold" } Quick rules
+  %ul{ class: "mt-2 text-sm text-stone-700 list-disc pl-5 space-y-1" }
+    %li Interval is always a number (1 means every week or every month).
+    %li Weekday uses 0=Sun .. 6=Sat.
+    %li Day of month is only for monthly.
+    %li Amount is stored in cents (20000 = $200.00).
+    %li Start on is when this estimate starts being used.

@@ -9,7 +9,8 @@
       %div{ class: "mt-4 flex gap-3 flex-wrap" }
         = link_to "This month", budget_month_path(month: Date.current.strftime("%Y-%m")), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
         = link_to "Next month", budget_month_path(month: Date.current.next_month.strftime("%Y-%m")), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Categories", categories_path, class: "text-sm underline text-stone-700"
+        = link_to "Projected income", income_sources_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = link_to "Categories", categories_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
 
     %div{ class: "border border-stone-200 p-5" }
       %h2{ class: "text-lg font-semibold" } Transactions
@@ -32,5 +33,5 @@
         - if first_account
           = link_to "Projection", reports_projection_path(first_account), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
         = link_to "Utilities", reports_utilities_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Recurring expenses", recurring_expenses_path, class: "text-sm underline text-stone-700"
-        = link_to "Income sources", income_sources_path, class: "text-sm underline text-stone-700"
+        = link_to "Recurring expenses", recurring_expenses_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = link_to "Income sources", income_sources_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
