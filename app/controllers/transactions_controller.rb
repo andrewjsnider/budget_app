@@ -1,10 +1,13 @@
 class TransactionsController < ApplicationController
+  include ActionView::RecordIdentifier
+
   def index
     @month = parse_month(params[:month]) || Date.current.beginning_of_month
     @accounts = Account.where(archived: [false, nil]).order(:name)
     @account = params[:account_id].present? ? @accounts.find { |a| a.id == params[:account_id].to_i } : nil
 
     @category = params[:category_id].present? ? Category.find_by(id: params[:category_id]) : nil
+    @categories = Category.order(:group, :name)
 
     scope = Transaction
       .includes(:category, :account)
@@ -41,20 +44,41 @@ class TransactionsController < ApplicationController
 
   def update
     @transaction = Transaction.find(params[:id])
+    @categories = Category.order(:group, :name)
 
     if @transaction.update(transaction_params)
-      redirect_to transactions_path(month: @transaction.occurred_on.beginning_of_month.strftime("%Y-%m")), notice: "Updated."
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            dom_id(@transaction),
+            partial: "transactions/row",
+            locals: { t: @transaction, categories: @categories }
+          )
+        end
+        format.html { redirect_to transactions_path(month: params[:month], account_id: params[:account_id]), notice: "Updated." }
+      end
     else
-      load_selects
-      flash.now[:alert] = @transaction.errors.full_messages.to_sentence
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            dom_id(@transaction),
+            partial: "transactions/row",
+            locals: { t: @transaction, categories: @categories }
+          ), status: :unprocessable_entity
+        end
+        format.html do
+          redirect_to transactions_path(month: params[:month], account_id: params[:account_id]),
+                      alert: @transaction.errors.full_messages.to_sentence
+        end
+      end
     end
   end
+
 
   private
 
   def transaction_params
-    params.require(:transaction).permit(:occurred_on, :description, :amount_cents, :account_id, :category_id)
+    params.require(:transaction).permit(:occurred_on, :description, :amount_cents, :category_id, :account_id)
   end
 
   def load_selects

@@ -31,10 +31,4 @@
           %th{ class: "p-3 text-right" }
       %tbody
         - @transactions.each do |t|
-          %tr{ class: "border-t border-stone-200" }
-            %td{ class: "p-3" }= t.occurred_on
-            %td{ class: "p-3" }= t.description
-            %td{ class: "p-3" }= t.account&.name
-            %td{ class: "p-3" }= t.category&.name
-            %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents.to_i / 100.0)
-            %td{ class: "p-3 text-right" }= link_to "Edit", edit_transaction_path(t), class: "text-sm underline"
+          = render "row", t: t, categories: @categories

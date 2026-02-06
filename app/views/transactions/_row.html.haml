@@ -1,0 +1,20 @@
+-# locals: t:, categories:
+= turbo_frame_tag dom_id(t) do
+  %tr{ class: "border-t border-stone-200", id: dom_id(t) }
+    %td{ class: "p-3" }= t.occurred_on
+    %td{ class: "p-3" }= t.description
+    %td{ class: "p-3" }= t.account&.name
+
+    %td{ class: "p-3" }
+      = form_with model: t,
+        url: transaction_path(t),
+        method: :patch,
+        data: { controller: "autosubmit", turbo_frame: dom_id(t) } do |f|
+        = f.select :category_id,
+          options_from_collection_for_select(categories, :id, :name, t.category_id),
+          {},
+          class: "border border-stone-300 p-2 text-sm w-full",
+          data: { action: "change->autosubmit#submit" }
+
+    %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents.to_i / 100.0)
+    %td{ class: "p-3 text-right" }= link_to "Edit", edit_transaction_path(t), class: "text-sm underline"
