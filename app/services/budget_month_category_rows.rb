@@ -1,4 +1,3 @@
-# app/services/budget_month_category_rows.rb
 class BudgetMonthCategoryRows
   Row = Struct.new(
     :category,
@@ -17,16 +16,18 @@ class BudgetMonthCategoryRows
   def rows
     category_ids = @expense_categories.map(&:id)
 
-    activity_by_category_id = Transaction
+    spent_by_category_id = Transaction
       .where(category_id: category_ids)
       .where(occurred_on: date_range)
-      .where("amount_cents < 0")
       .group(:category_id)
       .sum(:amount_cents)
 
     @expense_categories.map do |cat|
       assigned = @assigned_by_category_id[cat.id].to_i
-      activity = activity_by_category_id[cat.id].to_i
+      spent = spent_by_category_id[cat.id].to_i
+
+      activity = -spent
+
       Row.new(
         category: cat,
         assigned_cents: assigned,

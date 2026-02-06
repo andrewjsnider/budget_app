@@ -45,8 +45,7 @@
   = form_with url: budget_month_path(month: @month.strftime("%Y-%m")), method: :patch, class: "mt-10", data: { turbo: false} do
     %div{ class: "flex items-center justify-between" }
       %h2{ class: "text-lg font-semibold" } Categories
-      = submit_tag "Save",
-        class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+      = submit_tag "Save", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
 
     %div{ class: "mt-3 border border-stone-200" }
       %table{ class: "w-full text-sm" }

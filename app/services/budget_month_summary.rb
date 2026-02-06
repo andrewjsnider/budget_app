@@ -4,8 +4,9 @@ class BudgetMonthSummary
   end
 
   def income_cents
-    transactions.where("amount_cents > 0").sum(:amount_cents)
+    transactions.joins(:category).where(categories: { kind: "income" }).sum(:amount_cents)
   end
+
 
   def assigned_cents
     @budget_month.budget_items.sum(:assigned_cents)

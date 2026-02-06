@@ -9,7 +9,10 @@ class BudgetMonthsController < ApplicationController
     @budget_month = BudgetMonth.find_or_create_by!(month: @month)
 
     @expense_categories = Category.where(kind: "expense", archived: [false, nil]).order(:group, :name)
-    @income_cents = Transaction.where(occurred_on: @month..@month.end_of_month).where("amount_cents > 0").sum(:amount_cents)
+    @income_cents = Transaction.joins(:category)
+      .where(occurred_on: @month..@month.end_of_month)
+      .where(categories: { kind: "income" })
+      .sum(:amount_cents)
 
     items = @budget_month.budget_items.includes(:category).index_by(&:category_id)
     @assigned_by_category_id = items.transform_values(&:assigned_cents)
