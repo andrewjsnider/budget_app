@@ -1,22 +1,107 @@
 - if flash[:alert].present?
-  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+  %div{ class: "mb-4 border border-stone-300 bg-stone-50 p-3 text-sm text-stone-800" }= flash[:alert]
 
-= form_with model: recurring_expense, data: { turbo: false }, class: "space-y-4" do |f|
-  = f.text_field :name, placeholder: "Name", class: "w-full border border-stone-300 p-2 text-sm"
+= form_with model: recurring_expense, data: { turbo: false }, class: "space-y-6" do |f|
+  %div
+    %label{ class: "block text-sm font-medium text-stone-700" } Name
+    %p{ class: "mt-1 text-xs text-stone-600" } Example: Electricity, HOA Dues, Netflix
+    = f.text_field :name, placeholder: "Electricity", class: "mt-2 w-full border border-stone-300 p-2 text-sm"
 
   %div{ class: "grid grid-cols-1 sm:grid-cols-2 gap-4" }
-    = f.collection_select :category_id, @categories, :id, :name, { prompt: "Category" }, { class: "w-full border border-stone-300 p-2 text-sm" }
-    = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } Category
+      %p{ class: "mt-1 text-xs text-stone-600" } What is this for? Example: Utilities, Streaming
+      = f.collection_select :category_id, @categories, :id, :name, { prompt: "Select a category" }, { class: "mt-2 w-full border border-stone-300 p-2 text-sm" }
+
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } Account
+      %p{ class: "mt-1 text-xs text-stone-600" } Where is it usually paid from? Example: Checking
+      = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Select an account" }, { class: "mt-2 w-full border border-stone-300 p-2 text-sm" }
 
   %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4" }
-    = f.select :cadence, @cadences, {}, class: "w-full border border-stone-300 p-2 text-sm"
-    = f.number_field :interval, min: 1, class: "w-full border border-stone-300 p-2 text-sm"
-    = f.text_field :estimated_amount_cents, placeholder: "Amount cents (eg -5000)", class: "w-full border border-stone-300 p-2 text-sm"
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } Cadence
+      %p{ class: "mt-1 text-xs text-stone-600" } Example: monthly
+      = f.select :cadence, @cadences, {}, class: "mt-2 w-full border border-stone-300 p-2 text-sm"
 
-  %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4" }
-    = f.date_field :start_on, class: "w-full border border-stone-300 p-2 text-sm"
-    = f.date_field :end_on, class: "w-full border border-stone-300 p-2 text-sm"
-    = f.check_box :active
-    %span{ class: "text-sm text-stone-700" } Active
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } Interval
+      %p{ class: "mt-1 text-xs text-stone-600" } 1 = every time, 2 = every other time
+      = f.number_field :interval, min: 1, placeholder: "1", class: "mt-2 w-full border border-stone-300 p-2 text-sm"
 
-  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } Amount (cents)
+      %p{ class: "mt-1 text-xs text-stone-600" } 5000 = $50.00, 12000 = $120.00
+      = f.text_field :estimated_amount_cents, placeholder: "12000", class: "mt-2 w-full border border-stone-300 p-2 text-sm"
+
+  %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4 items-end" }
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } Start date
+      %p{ class: "mt-1 text-xs text-stone-600" } Example: first day of this month
+      = f.date_field :start_on, class: "mt-2 w-full border border-stone-300 p-2 text-sm"
+
+    %div
+      %label{ class: "block text-sm font-medium text-stone-700" } End date
+      %p{ class: "mt-1 text-xs text-stone-600" } Leave blank if ongoing
+      = f.date_field :end_on, class: "mt-2 w-full border border-stone-300 p-2 text-sm"
+
+    %div{ class: "flex items-center gap-2 pt-6" }
+      = f.check_box :active
+      %span{ class: "text-sm text-stone-700" } Active
+
+  %div{ class: "pt-2 flex gap-3 flex-wrap items-center" }
+    = f.submit "Save recurring expense", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+    = link_to "Cancel", recurring_expenses_path, class: "text-sm underline text-stone-700"
+
+%div{ class: "my-6 border border-stone-200 p-4" }
+  %h2{ class: "text-base font-semibold text-stone-900" } How to fill this out
+  %div{ class: "mt-2 text-sm text-stone-700 space-y-2" }
+    %p
+      %span{ class: "font-semibold" } Name:
+      something you recognize.
+      %span{ class: "text-stone-600" } Example: “Electricity”
+    %p
+      %span{ class: "font-semibold" } Category:
+      what this money is for.
+      %span{ class: "text-stone-600" } Example: “Electricity and Gas”
+    %p
+      %span{ class: "font-semibold" } Account:
+      where it usually gets paid from.
+      %span{ class: "text-stone-600" } Example: “Checking”
+    %p
+      %span{ class: "font-semibold" } Cadence + Interval:
+      how often.
+      %span{ class: "text-stone-600" } Examples: “monthly + 1” (every month), “weekly + 2” (every 2 weeks)
+    %p
+      %span{ class: "font-semibold" } Amount (cents):
+      5000 = $50.00, 12000 = $120.00.
+    %p
+      %span{ class: "font-semibold" } Start date:
+      when to begin counting this in projections.
+      %span{ class: "text-stone-600" } Example: first day of this month
+    %p
+      %span{ class: "font-semibold" } End date:
+      leave blank unless it stops.
+
+%div{ class: "mb-6 border border-stone-200 p-4" }
+  %h2{ class: "text-base font-semibold text-stone-900" } Real examples
+  %div{ class: "mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm" }
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "font-semibold text-stone-900" } Monthly bill (electric)
+      %ul{ class: "mt-2 text-stone-700 list-disc pl-5 space-y-1" }
+        %li Name: Electricity
+        %li Cadence: monthly
+        %li Interval: 1
+        %li Amount: 12000 cents ($120.00)
+        %li Start: this month
+        %li Active: checked
+
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "font-semibold text-stone-900" } Every-2-weeks bill (allowance)
+      %ul{ class: "mt-2 text-stone-700 list-disc pl-5 space-y-1" }
+        %li Name: Kids allowance
+        %li Cadence: weekly
+        %li Interval: 2
+        %li Amount: 4000 cents ($40.00)
+        %li Start: this month
+        %li Active: checked
