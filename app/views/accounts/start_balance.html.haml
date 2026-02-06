@@ -1,0 +1,21 @@
+%div{ class: "max-w-xl mx-auto px-6 py-10 text-stone-900" }
+  %h1{ class: "text-3xl font-semibold" } Starting balance
+  %p{ class: "mt-2 text-stone-700" }
+    This creates one transaction to set the account balance as of the date you choose. You can only do this once per account.
+
+  = form_with url: create_starting_balance_account_path(@account), method: :post, class: "mt-6 space-y-4" do
+    %div
+      %label{ class: "block text-sm text-stone-700" } Date
+      = date_field_tag :occurred_on, Date.current.beginning_of_month, class: "mt-1 w-full border border-stone-300 p-2"
+
+    %div
+      %label{ class: "block text-sm text-stone-700" } Balance (in cents for now)
+      = number_field_tag :starting_balance_cents, nil, class: "mt-1 w-full border border-stone-300 p-2"
+
+    %div
+      %label{ class: "block text-sm text-stone-700" } Category
+      = select_tag :category_id, options_from_collection_for_select(@categories, :id, :name), class: "mt-1 w-full border border-stone-300 p-2"
+
+    %div{ class: "flex items-center gap-4 pt-2" }
+      = submit_tag "Create starting balance", class: "border border-stone-900 px-4 py-2 text-sm"
+      = link_to "Cancel", account_path(@account), class: "text-sm underline"

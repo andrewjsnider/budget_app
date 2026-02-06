@@ -5,6 +5,7 @@ class Transaction < ApplicationRecord
   before_destroy :ensure_not_reconciled
 
   validates :occurred_on, :amount_cents, presence: true
+  validate :only_one_starting_balance_per_account
 
   private
 
@@ -12,6 +13,18 @@ class Transaction < ApplicationRecord
     if reconciled_at.present?
       errors.add(:base, "Cannot delete a reconciled transaction")
       throw :abort
+    end
+  end
+
+  def only_one_starting_balance_per_account
+    return unless starting_balance
+    return if account_id.blank?
+
+    existing = Transaction.where(account_id: account_id, starting_balance: true)
+    existing = existing.where.not(id: id) if persisted?
+
+    if existing.exists?
+      errors.add(:starting_balance, "already exists for this account")
     end
   end
 end

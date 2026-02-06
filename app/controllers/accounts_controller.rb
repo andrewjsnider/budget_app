@@ -1,5 +1,5 @@
 class AccountsController < ApplicationController
-  before_action :set_account, only: %i[edit update]
+  before_action :set_account, only: %i[edit update starting_balance create_starting_balance]
 
   def index
     @accounts = Account.where(archived: [false, nil]).order(:name)
@@ -37,6 +37,40 @@ class AccountsController < ApplicationController
       redirect_to account_path(@account), notice: "Updated."
     else
       render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def starting_balance
+    redirect_to account_path(@account), alert: "Starting balance already set." if @account.has_starting_balance?
+    @categories = Category.order(:name)
+  end
+
+  def create_starting_balance
+    if @account.has_starting_balance?
+      redirect_to account_path(@account), alert: "Starting balance already set."
+      return
+    end
+
+    cents = params.fetch(:starting_balance_cents).to_i
+    date  = Date.parse(params.fetch(:occurred_on))
+
+    # You probably want a dedicated Category like "Starting Balance".
+    category = Category.find(params.fetch(:category_id))
+
+    tx = @account.transactions.build(
+      occurred_on: date,
+      description: "Starting balance",
+      amount_cents: cents,
+      category: category,
+      cleared: true,
+      starting_balance: true
+    )
+
+    if tx.save
+      redirect_to account_path(@account), notice: "Starting balance set."
+    else
+      flash.now[:alert] = tx.errors.full_messages.to_sentence
+      render :starting_balance, status: :unprocessable_entity
     end
   end
 

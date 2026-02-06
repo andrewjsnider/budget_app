@@ -1,34 +1,53 @@
 %div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
-  %div{ class: "flex items-end justify-between gap-6" }
+  %div{ class: "flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between" }
     %div
-      %h1{ class: "text-3xl font-semibold" }= @account.name
-      %p{ class: "mt-2 text-stone-700" }= @month.strftime("%B %Y")
+      %div{ class: "flex items-baseline gap-3 flex-wrap" }
+        %h1{ class: "text-3xl font-semibold" }= @account.name
+        %span{ class: "text-sm text-stone-600" }= @month.strftime("%B %Y")
+      - unless @account.has_starting_balance?
+        %p{ class: "mt-2" }
+          = link_to "Set starting balance", starting_balance_account_path(@account), class: "text-sm underline text-stone-700 hover:text-stone-900"
 
-    %div{ class: "flex items-end gap-3 flex-wrap" }
+    %div{ class: "flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end" }
       = form_with url: account_path(@account), method: :get, class: "flex items-end gap-3" do |f|
         %div
           %label{ class: "block text-sm text-stone-700" } Month
-          = month_field_tag :month, @month.strftime("%Y-%m"), class: "border border-stone-300 p-2 text-sm"
+          = month_field_tag :month, @month.strftime("%Y-%m"), class: "mt-1 border border-stone-300 p-2 text-sm w-40"
         = f.submit "Go", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
-      = link_to "New reconciliation", new_account_reconciliation_path(@account), class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
-      = link_to "Back", accounts_path, class: "text-sm underline text-stone-700"
+      %div{ class: "flex items-center gap-3 flex-wrap" }
+        = link_to "New reconciliation", new_account_reconciliation_path(@account), class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = link_to "Back", accounts_path, class: "text-sm underline text-stone-700 hover:text-stone-900"
 
-  %div{ class: "mt-8 border border-stone-200" }
+  %div{ class: "mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4" }
+    %div{ class: "border border-stone-200 p-4" }
+      %p{ class: "text-xs uppercase tracking-wide text-stone-600" } Opening balance
+      %p{ class: "mt-1 text-lg font-semibold" }= number_to_currency(@opening_balance_cents.to_i / 100.0)
+      %p{ class: "mt-1 text-xs text-stone-600" } As of #{@month.beginning_of_month.strftime("%Y-%m-%d")}
+    %div{ class: "border border-stone-200 p-4" }
+      %p{ class: "text-xs uppercase tracking-wide text-stone-600" } Activity
+      %p{ class: "mt-1 text-lg font-semibold" }= number_to_currency(@activity_cents.to_i / 100.0)
+      %p{ class: "mt-1 text-xs text-stone-600" } This month
+    %div{ class: "border border-stone-200 p-4" }
+      %p{ class: "text-xs uppercase tracking-wide text-stone-600" } Ending balance
+      %p{ class: "mt-1 text-lg font-semibold" }= number_to_currency(@ending_balance_cents.to_i / 100.0)
+      %p{ class: "mt-1 text-xs text-stone-600" } As of #{@month.end_of_month.strftime("%Y-%m-%d")}
+
+  %div{ class: "mt-6 border border-stone-200" }
     %table{ class: "w-full text-sm" }
       %thead
-        %tr{ class: "border-b border-stone-200" }
-          %th{ class: "p-3 text-left" } Date
-          %th{ class: "p-3 text-left" } Description
-          %th{ class: "p-3 text-left" } Category
-          %th{ class: "p-3 text-right" } Amount
+        %tr{ class: "border-b border-stone-200 bg-stone-50" }
+          %th{ class: "p-3 text-left font-medium text-stone-700 w-32" } Date
+          %th{ class: "p-3 text-left font-medium text-stone-700" } Description
+          %th{ class: "p-3 text-left font-medium text-stone-700" } Category
+          %th{ class: "p-3 text-right font-medium text-stone-700 w-32" } Amount
       %tbody
         - if @transactions.any?
           - @transactions.each do |t|
-            %tr{ class: "border-t border-stone-200" }
-              %td{ class: "p-3" }= t.occurred_on.strftime("%Y-%m-%d")
+            %tr{ class: "border-t border-stone-200 hover:bg-stone-50" }
+              %td{ class: "p-3 text-stone-700" }= t.occurred_on.strftime("%Y-%m-%d")
               %td{ class: "p-3" }= t.description
               %td{ class: "p-3 text-stone-700" }= t.category&.name
-              %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents / 100.0)
+              %td{ class: "p-3 text-right font-medium" }= number_to_currency(t.amount_cents / 100.0)
         - else
           %tr{ class: "border-t border-stone-200" }
-            %td{ class: "p-3 text-stone-700", colspan: 4 } No transactions for this month.
+            %td{ class: "p-4 text-stone-700", colspan: 4 } No transactions for this month.

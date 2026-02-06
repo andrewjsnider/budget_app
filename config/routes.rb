@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   root to: "dashboard#show"
 
   resources :accounts, except: [:destroy] do
+    member do
+      get  :starting_balance
+      post :create_starting_balance
+    end
+
     resources :reconciliations, only: [:new, :create, :show]
   end
 
