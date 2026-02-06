@@ -67,8 +67,11 @@
               %td{ class: "p-3 text-right" }
                 = text_field_tag "assigned[#{cat.id}]", (row.assigned_cents / 100.0), inputmode: "decimal", class: "w-28 border border-stone-300 p-2 text-sm text-right"
 
-              %td{ class: "p-3 text-right text-stone-700" }
-                = number_to_currency(row.activity_cents / 100.0)
 
-              %td{ class: "p-3 text-right font-semibold" }
+              %td{ class: "p-3 text-right text-stone-700" }
+                - activity_class = row.activity_cents < 0 ? "text-red-600" : "text-stone-700"
+                %span{ class: activity_class }= number_to_currency(row.activity_cents / 100.0)
+
+              - available_class = row.available_cents < 0 ? "text-red-700" : "text-green-700"
+              %td{ class: "p-3 text-right font-semibold #{available_class}" }
                 = number_to_currency(row.available_cents / 100.0)
