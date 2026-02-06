@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_06_201523) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -72,6 +72,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_201523) do
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_income_sources_on_account_id"
     t.index ["category_id"], name: "index_income_sources_on_category_id"
+  end
+
+  create_table "payee_rules", force: :cascade do |t|
+    t.string "pattern", null: false
+    t.string "match_type", default: "contains", null: false
+    t.bigint "category_id", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "match_type"], name: "index_payee_rules_on_active_and_match_type"
+    t.index ["category_id"], name: "index_payee_rules_on_category_id"
   end
 
   create_table "reconciliations", force: :cascade do |t|
@@ -144,6 +155,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_201523) do
   add_foreign_key "income_estimates", "income_sources"
   add_foreign_key "income_sources", "accounts"
   add_foreign_key "income_sources", "categories"
+  add_foreign_key "payee_rules", "categories"
   add_foreign_key "reconciliations", "accounts"
   add_foreign_key "recurring_expenses", "accounts"
   add_foreign_key "recurring_expenses", "categories"

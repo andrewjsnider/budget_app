@@ -8,6 +8,10 @@ Rails.application.routes.draw do
     end
 
     resources :reconciliations, only: [:new, :create, :show]
+
+    get  "uncategorized", to: "transactions_bulk_categorizations#show"
+    post "uncategorized", to: "transactions_bulk_categorizations#update"
+
     resource :transactions_import, only: [:new, :create], controller: "transactions_imports"
   end
 

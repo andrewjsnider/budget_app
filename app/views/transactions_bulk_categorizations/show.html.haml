@@ -1,0 +1,44 @@
+%div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex items-end justify-between gap-6" }
+    %div
+      %h1{ class: "text-3xl font-semibold" } Uncategorized
+      %p{ class: "mt-2 text-stone-700" }= "#{@account.name} · #{@month.strftime("%B %Y")}"
+    = link_to "Back", account_path(@account, month: @month.strftime("%Y-%m")), class: "text-sm underline text-stone-700 hover:text-stone-900"
+
+  - if @groups.blank?
+    %div{ class: "mt-8 border border-stone-200 p-6 text-stone-700" } No uncategorized transactions.
+  - else
+    %div{ class: "mt-8 space-y-4" }
+      - @groups.each do |merchant_key, txs|
+        %div{ class: "border border-stone-200 p-4" }
+          %div{ class: "flex items-start justify-between gap-6 flex-wrap" }
+            %div
+              %p{ class: "text-sm font-semibold" }= merchant_key
+              %p{ class: "mt-1 text-xs text-stone-600" }= "#{txs.size} transactions"
+            = form_with url: account_uncategorized_path(@account), method: :post, class: "flex items-end gap-3" do
+              = hidden_field_tag :month, @month.strftime("%Y-%m")
+              = hidden_field_tag :merchant_key, merchant_key
+              %div
+                %label{ class: "block text-sm text-stone-700" } Category
+                = select_tag :category_id, options_from_collection_for_select(@categories, :id, :name), class: "mt-1 border border-stone-300 p-2 text-sm"
+              %div{ class: "flex items-center gap-2 pb-1" }
+                = check_box_tag :save_rule, "1", true
+                %span{ class: "text-sm text-stone-700" } Save rule
+              = submit_tag "Apply", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+
+          %div{ class: "mt-4 border-t border-stone-200 pt-3" }
+            %table{ class: "w-full text-sm" }
+              %thead
+                %tr{ class: "text-stone-700" }
+                  %th{ class: "py-1 text-left w-32" } Date
+                  %th{ class: "py-1 text-left" } Description
+                  %th{ class: "py-1 text-right w-28" } Amount
+              %tbody
+                - txs.first(5).each do |t|
+                  %tr{ class: "border-t border-stone-200" }
+                    %td{ class: "py-2" }= t.occurred_on.strftime("%Y-%m-%d")
+                    %td{ class: "py-2 text-stone-700" }= t.description
+                    %td{ class: "py-2 text-right font-medium" }= number_to_currency(t.amount_cents / 100.0)
+                - if txs.size > 5
+                  %tr
+                    %td{ colspan: 3, class: "pt-2 text-xs text-stone-600" } Showing first 5.

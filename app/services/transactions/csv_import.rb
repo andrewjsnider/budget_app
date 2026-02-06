@@ -14,7 +14,7 @@ module Transactions
     end
 
     def call
-      text = @csv_text.to_s.sub(/\A\xEF\xBB\xBF/, "") # strip UTF-8 BOM if present
+      text = @csv_text.to_s.sub(/\A\xEF\xBB\xBF/, "")
       col_sep = detect_col_sep(text)
 
       rows = CSV.parse(
@@ -32,10 +32,10 @@ module Transactions
       errors   = []
 
       rows.each_with_index do |row, idx|
-        attrs = build_attrs_from_row(row)
-        next if attrs.nil?
-
         begin
+          attrs = build_attrs_from_row(row)
+          next if attrs.nil?
+
           Transaction.create!(attrs)
           imported += 1
         rescue ActiveRecord::RecordNotUnique
@@ -46,6 +46,9 @@ module Transactions
         rescue ActiveRecord::StatementInvalid => e
           failed += 1
           errors << "Row #{idx + 2}: #{e.message}"
+        rescue => e
+          failed += 1
+          errors << "Row #{idx + 2}: #{e.class}: #{e.message}"
         end
       end
 
@@ -59,8 +62,8 @@ module Transactions
     private
 
     def detect_col_sep(text)
-      sample = text.lines.first.to_s
-      return "\t" if sample.include?("\t")
+      first = text.lines.first.to_s
+      return "\t" if first.include?("\t")
       ","
     end
 
@@ -77,6 +80,9 @@ module Transactions
 
       amount_cents = raw_amount.abs
 
+      matched_category = apply_payee_rule_category(description)
+      category = matched_category || category_for(raw_amount)
+
       import_hash = fingerprint(
         date: date,
         description: description,
@@ -88,12 +94,32 @@ module Transactions
         occurred_on: date,
         description: description.presence || "Imported",
         amount_cents: amount_cents,
-        category: category_for(raw_amount),
+        category: category,
         cleared: true,
         import_hash: import_hash
       }
     end
 
+    def apply_payee_rule_category(description)
+      PayeeRule.where(active: true).includes(:category).order(:id).each do |rule|
+        return rule.category if rule.matches?(description)
+      end
+      nil
+    rescue ActiveRecord::StatementInvalid
+      nil
+    end
+
+    def category_for(raw_amount)
+      raw_amount < 0 ? @default_category : income_category
+    end
+
+    def income_category
+      @income_category ||= Category.find_or_create_by!(name: "Imported Income") do |c|
+        c.kind = "income"
+        c.group = "Imported"
+        c.archived = false
+      end
+    end
 
     def value_for(row, candidates)
       headers = row.headers.compact.map(&:to_s)
@@ -136,22 +162,6 @@ module Transactions
     def fingerprint(date:, description:, amount_cents:)
       normalized_desc = description.to_s.downcase.strip.gsub(/\s+/, " ")
       Digest::SHA256.hexdigest([@account.id, date.to_s, amount_cents.to_s, normalized_desc].join("|"))
-    end
-
-    def category_for(raw_amount)
-      if raw_amount < 0
-        @default_category # expense
-      else
-        income_category
-      end
-    end
-
-    def income_category
-      @income_category ||= Category.find_or_create_by!(name: "Imported Income") do |c|
-        c.kind = "income"
-        c.group = "Imported"
-        c.archived = false
-      end
     end
   end
 end
