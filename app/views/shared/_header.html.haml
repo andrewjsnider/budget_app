@@ -1,17 +1,29 @@
 %header{ class: "border-b border-stone-200" }
   :ruby
-    month = Date.current
-    this_month = month.strftime("%Y-%m")
-    month_label = month.strftime("%B %Y")
-    prev_month = month.prev_month.strftime("%Y-%m")
-    next_month = month.next_month.strftime("%Y-%m")
+    base_month =
+      if defined?(@month) && @month.present?
+        @month
+      elsif params[:month].present?
+        Date.strptime(params[:month], "%Y-%m")
+      else
+        Date.current.beginning_of_month
+      end
+
+    this_month = base_month.strftime("%Y-%m")
+    month_label = base_month.strftime("%B %Y")
+    prev_month = base_month.prev_month.strftime("%Y-%m")
+    next_month = base_month.next_month.strftime("%Y-%m")
 
   %div{ class: "max-w-5xl mx-auto px-6 py-4 flex items-center justify-between text-stone-900" }
     %div{ class: "flex items-center gap-6" }
       %span{ class: "text-lg font-semibold leading-none" }= link_to "Budget", root_path, class: "hover:text-stone-600"
 
-      %div{ class: "flex items-center gap-3" }
+      %div{ class: "flex items-center gap-2" }
         %span{ class: "text-sm text-stone-600 leading-none" }= month_label
+        %span{ class: "text-stone-400 text-sm" } ·
+        = link_to "Prev", budget_month_path(month: prev_month), class: "text-sm underline text-stone-600 hover:text-stone-900"
+        %span{ class: "text-stone-400 text-sm" } |
+        = link_to "Next", budget_month_path(month: next_month), class: "text-sm underline text-stone-600 hover:text-stone-900"
 
       %nav{ class: "flex items-center gap-4" }
         = link_to "Month", budget_month_path(month: this_month), class: "text-sm leading-none underline hover:text-stone-600"
@@ -19,5 +31,5 @@
         = link_to "Recurring", recurring_expenses_path, class: "text-sm leading-none underline hover:text-stone-600"
         = link_to "Income", income_sources_path, class: "text-sm leading-none underline hover:text-stone-600"
 
-    %div{ class: "flex items-center gap-4" }
+    %div{ class: "flex items-center gap-4 mt-1" }
       = button_to "Sign out", session_path, method: :delete, form: { class: "inline-flex items-center" }, class: "text-sm leading-none underline bg-transparent border-none p-0 hover:text-stone-600 hover:cursor-pointer"

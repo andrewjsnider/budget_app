@@ -26,7 +26,23 @@
       %div{ class: "text-sm text-stone-700" } To Assign
       %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@to_assign_cents / 100.0)
 
-  = form_with url: budget_month_path(month: @month.strftime("%Y-%m")), method: :patch, class: "mt-10" do
+  %div{ class: "mt-6 mb-3 border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700" }
+    %p
+      %strong How this works:
+      You only edit the
+      %strong Assigned
+      column.
+    %p{ class: "mt-1 text-stone-600" }
+      Example:
+      assign
+      %strong $300
+      to Groceries.
+      If you spend
+      %strong $120,
+      Available becomes
+      %strong $180.
+
+  = form_with url: budget_month_path(month: @month.strftime("%Y-%m")), method: :patch, class: "mt-10", data: { turbo: false} do
     %div{ class: "flex items-center justify-between" }
       %h2{ class: "text-lg font-semibold" } Categories
       = submit_tag "Save",
