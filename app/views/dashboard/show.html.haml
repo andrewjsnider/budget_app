@@ -1,37 +1,51 @@
+:ruby
+  month = Date.current
+  this_month = month.strftime("%Y-%m")
+  next_month = month.next_month.strftime("%Y-%m")
+  prev_month = month.prev_month.strftime("%Y-%m")
+  month_label = month.strftime("%B %Y")
+  btn = "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+  first_account = Account.where(archived: [false, nil]).order(:name).first
+
 %div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
-  %h1{ class: "text-3xl font-semibold" } Budget
-  %p{ class: "mt-2 text-stone-700" }= Date.current.strftime("%B %Y")
+  %div{ class: "flex items-end justify-between gap-6 flex-wrap" }
+    %div
+      %h1{ class: "text-3xl font-semibold" } Budget
+      %p{ class: "mt-2 text-stone-700" }= month_label
+
+    %div{ class: "flex gap-3 flex-wrap" }
+      = link_to "Prev month", budget_month_path(month: prev_month), class: btn
+      = link_to "This month", budget_month_path(month: this_month), class: btn
+      = link_to "Next month", budget_month_path(month: next_month), class: btn
 
   %div{ class: "mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4" }
     %div{ class: "border border-stone-200 p-5" }
       %h2{ class: "text-lg font-semibold" } Budget
-      %p{ class: "mt-2 text-sm text-stone-700" } Assign money and review category balances.
+      %p{ class: "mt-2 text-sm text-stone-700" } Assign money, then fix overspending by moving money between categories.
       %div{ class: "mt-4 flex gap-3 flex-wrap" }
-        = link_to "This month", budget_month_path(month: Date.current.strftime("%Y-%m")), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Next month", budget_month_path(month: Date.current.next_month.strftime("%Y-%m")), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Projected income", income_sources_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Categories", categories_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = link_to "Open this month", budget_month_path(month: this_month), class: btn
+        = link_to "Next month", budget_month_path(month: next_month), class: btn
+        = link_to "Categories", categories_path, class: btn
+        = link_to "Income", income_sources_path, class: btn
 
     %div{ class: "border border-stone-200 p-5" }
       %h2{ class: "text-lg font-semibold" } Transactions
-      %p{ class: "mt-2 text-sm text-stone-700" } Enter and review transactions.
+      %p{ class: "mt-2 text-sm text-stone-700" } Add spending as it happens. Reconciled transactions are locked.
       %div{ class: "mt-4 flex gap-3 flex-wrap" }
-        = link_to "This month", transactions_path(month: Date.current.strftime("%Y-%m")), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "New transaction", new_transaction_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = link_to "New transaction", new_transaction_path, class: btn
+        = link_to "View this month", transactions_path(month: this_month), class: btn
 
     %div{ class: "border border-stone-200 p-5" }
       %h2{ class: "text-lg font-semibold" } Reconcile
-      %p{ class: "mt-2 text-sm text-stone-700" } Match accounts to statement balances.
-      %div{ class: "mt-4" }
-        = link_to "Accounts", accounts_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+      %p{ class: "mt-2 text-sm text-stone-700" } Mark transactions against a statement to confirm balances.
+      %div{ class: "mt-4 flex gap-3 flex-wrap" }
+        = link_to "Start reconcile", accounts_path, class: btn
 
     %div{ class: "border border-stone-200 p-5" }
       %h2{ class: "text-lg font-semibold" } Reports
-      %p{ class: "mt-2 text-sm text-stone-700" } Projection and utilities overview.
+      %p{ class: "mt-2 text-sm text-stone-700" } Quick checks. Not required for daily budgeting.
       %div{ class: "mt-4 flex gap-3 flex-wrap" }
-        - first_account = Account.where(archived: [false, nil]).order(:name).first
         - if first_account
-          = link_to "Projection", reports_projection_path(first_account), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Utilities", reports_utilities_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Recurring expenses", recurring_expenses_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
-        = link_to "Income sources", income_sources_path, class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+          = link_to "Projection", reports_projection_path(first_account), class: btn
+        = link_to "Utilities", reports_utilities_path, class: btn
+        = link_to "Recurring", recurring_expenses_path, class: btn

@@ -1,13 +1,23 @@
 %header{ class: "border-b border-stone-200" }
-  %div{ class: "max-w-5xl mx-auto px-6 py-4 flex items-center justify-between text-stone-900" }
+  :ruby
+    month = Date.current
+    this_month = month.strftime("%Y-%m")
+    month_label = month.strftime("%B %Y")
+    prev_month = month.prev_month.strftime("%Y-%m")
+    next_month = month.next_month.strftime("%Y-%m")
 
-    %div{ class: "flex items-end gap-6" }
+  %div{ class: "max-w-5xl mx-auto px-6 py-4 flex items-center justify-between text-stone-900" }
+    %div{ class: "flex items-center gap-6" }
       %span{ class: "text-lg font-semibold leading-none" }= link_to "Budget", root_path, class: "hover:text-stone-600"
-      = link_to "Current Month", budget_month_path(month: Date.current.strftime("%Y-%m")), class: "text-sm leading-none underline"
-      = link_to "Transactions", transactions_path(month: Date.current.strftime("%Y-%m")), class: "text-sm leading-none underline"
-      = link_to "Categories", categories_path, class: "text-sm leading-none underline"
-      = link_to "Accounts", accounts_path, class: "text-sm leading-none underline"
+
+      %div{ class: "flex items-center gap-3" }
+        %span{ class: "text-sm text-stone-600 leading-none" }= month_label
+
+      %nav{ class: "flex items-center gap-4" }
+        = link_to "Month", budget_month_path(month: this_month), class: "text-sm leading-none underline hover:text-stone-600"
+        = link_to "Transactions", transactions_path(month: this_month), class: "text-sm leading-none underline hover:text-stone-600"
+        = link_to "Recurring", recurring_expenses_path, class: "text-sm leading-none underline hover:text-stone-600"
+        = link_to "Income", income_sources_path, class: "text-sm leading-none underline hover:text-stone-600"
 
     %div{ class: "flex items-center gap-4" }
-      = link_to "Reports", reports_utilities_path, class: "text-sm leading-none underline inline-flex items-center"
-      = button_to "Sign out", session_path, method: :delete, form: { class: "inline-flex items-center" }, class: "text-sm leading-none underline bg-transparent border-none p-0 inline-flex items-center hover:cursor-pointer"
+      = button_to "Sign out", session_path, method: :delete, form: { class: "inline-flex items-center" }, class: "text-sm leading-none underline bg-transparent border-none p-0 hover:text-stone-600 hover:cursor-pointer"
