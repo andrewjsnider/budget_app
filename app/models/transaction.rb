@@ -6,6 +6,7 @@ class Transaction < ApplicationRecord
 
   validates :occurred_on, :amount_cents, presence: true
   validate :only_one_starting_balance_per_account
+  validates :amount_cents, numericality: { greater_than_or_equal_to: 0 }
 
   private
 

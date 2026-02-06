@@ -15,6 +15,7 @@
           = month_field_tag :month, @month.strftime("%Y-%m"), class: "mt-1 border border-stone-300 p-2 text-sm w-40"
         = f.submit "Go", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
       %div{ class: "flex items-center gap-3 flex-wrap" }
+        = link_to "Import CSV", new_account_transactions_import_path(@account), class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
         = link_to "New reconciliation", new_account_reconciliation_path(@account), class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
         = link_to "Back", accounts_path, class: "text-sm underline text-stone-700 hover:text-stone-900"
 

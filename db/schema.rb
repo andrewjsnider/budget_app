@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_06_200203) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_06_201523) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -124,6 +124,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_200203) do
     t.boolean "cleared"
     t.datetime "reconciled_at"
     t.boolean "starting_balance", default: false, null: false
+    t.string "import_hash"
+    t.index ["account_id", "import_hash"], name: "index_transactions_on_account_id_and_import_hash", unique: true
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["account_id"], name: "index_transactions_one_starting_balance_per_account", unique: true, where: "(starting_balance = true)"
     t.index ["category_id"], name: "index_transactions_on_category_id"

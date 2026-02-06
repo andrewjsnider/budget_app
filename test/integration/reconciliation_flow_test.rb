@@ -11,7 +11,7 @@ class ReconciliationFlowTest < ActionDispatch::IntegrationTest
     account = create(:account, name: "Checking")
     cat = create(:category, name: "Electric", kind: "expense", group: "utilities", archived: false)
 
-    Transaction.create!(occurred_on: Date.new(2026, 2, 5), description: "Bill", amount_cents: -100_00, account: account, account_name: "Checking", category: cat)
+    Transaction.create!(occurred_on: Date.new(2026, 2, 5), description: "Bill", amount_cents: 100_00, account: account, account_name: "Checking", category: cat)
 
     post account_reconciliations_path(account), params: {
       starts_on: "2026-02-01",

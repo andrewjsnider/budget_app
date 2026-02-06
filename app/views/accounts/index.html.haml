@@ -15,8 +15,7 @@
       %tbody
         - @accounts.each do |account|
           %tr{ class: "border-t border-stone-200" }
-            %td{ class: "p-3" }= account.name
+            %td{ class: "p-3" }= link_to account.name, account_path(account), class: "underline"
             %td{ class: "p-3 text-stone-700" }= account.kind
             %td{ class: "p-3 text-right flex gap-2 justify-end" }
-              = link_to "View", account_path(account), class: "text-sm underline"
               = link_to 'Edit', edit_account_path(account), class: 'text-sm underline'

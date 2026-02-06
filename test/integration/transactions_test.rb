@@ -21,7 +21,7 @@ class TransactionsTest < ActionDispatch::IntegrationTest
         transaction: {
           occurred_on: "2026-02-03",
           description: "Test",
-          amount_cents: -1234,
+          amount_cents: 1234,
           account_id: @account.id,
           category_id: @category.id
         }
@@ -41,8 +41,8 @@ class TransactionsTest < ActionDispatch::IntegrationTest
     cat1 = FactoryBot.create(:category, name: "Power")
     cat2 = FactoryBot.create(:category, name: "Water")
 
-    FactoryBot.create(:transaction, account: account, category: cat1, occurred_on: Date.new(2026, 2, 5), amount_cents: -1000, description: "Electric")
-    FactoryBot.create(:transaction, account: account, category: cat2, occurred_on: Date.new(2026, 2, 6), amount_cents: -1000, description: "Water bill")
+    FactoryBot.create(:transaction, account: account, category: cat1, occurred_on: Date.new(2026, 2, 5), amount_cents: 1000, description: "Electric")
+    FactoryBot.create(:transaction, account: account, category: cat2, occurred_on: Date.new(2026, 2, 6), amount_cents: 1000, description: "Water bill")
 
     get transactions_path(month: "2026-02", category_id: cat1.id)
     assert_response :success

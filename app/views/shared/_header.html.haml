@@ -28,6 +28,7 @@
         = link_to "Next", budget_month_path(month: next_month), class: "text-sm underline text-stone-600 hover:text-stone-900"
 
       %nav{ class: "flex items-center gap-4" }
+        = link_to "Accounts", accounts_path, class: "text-sm leading-none underline hover:text-stone-600"
         = link_to "Transactions", transactions_path(month: this_month), class: "text-sm leading-none underline hover:text-stone-600"
         = link_to "Recurring", recurring_expenses_path, class: "text-sm leading-none underline hover:text-stone-600"
         = link_to "Income", income_sources_path, class: "text-sm leading-none underline hover:text-stone-600"

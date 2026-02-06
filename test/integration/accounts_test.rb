@@ -17,7 +17,7 @@ class AccountsTest < ActionDispatch::IntegrationTest
       category: category,
       occurred_on: Date.current.beginning_of_month + 2.days,
       description: "Market",
-      amount_cents: -1234
+      amount_cents: 1234
     )
 
     get accounts_path

@@ -8,6 +8,7 @@ Rails.application.routes.draw do
     end
 
     resources :reconciliations, only: [:new, :create, :show]
+    resource :transactions_import, only: [:new, :create], controller: "transactions_imports"
   end
 
   get  "budget/:month", to: "budget_months#show",   as: :budget_month
