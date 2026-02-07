@@ -9,3 +9,6 @@ application.register("hello", HelloController)
 
 import AutosubmitController from "./autosubmit_controller"
 application.register("autosubmit", AutosubmitController)
+
+import FlashRowController from "./flash_row_controller"
+application.register("flash-row", FlashRowController)

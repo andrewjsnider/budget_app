@@ -1,1 +1,35 @@
 @import "tailwindcss";
+@tailwind components;
+@tailwind utilities;
+
+@keyframes row-pop {
+  0% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+
+  18% {
+    background-color: rgb(254 249 195);
+    transform: scale(1.003);
+  }
+
+  45% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+
+  70% {
+    background-color: rgb(254 249 195);
+    transform: scale(1.003);
+  }
+
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.flash-updated {
+  animation: row-pop 0.6s ease-out;
+  transform-origin: center;
+}

@@ -50,22 +50,27 @@ class TransactionsController < ApplicationController
       respond_to do |format|
         format.turbo_stream do
           render turbo_stream: turbo_stream.replace(
-            dom_id(@transaction),
+            helpers.dom_id(@transaction),
             partial: "transactions/row",
-            locals: { t: @transaction, categories: @categories }
+            locals: { t: @transaction, categories: @categories, flash_updated: true }
           )
         end
-        format.html { redirect_to transactions_path(month: params[:month], account_id: params[:account_id]), notice: "Updated." }
+
+        format.html do
+          redirect_to transactions_path(month: params[:month], account_id: params[:account_id]),
+                      notice: "Updated."
+        end
       end
     else
       respond_to do |format|
         format.turbo_stream do
           render turbo_stream: turbo_stream.replace(
-            dom_id(@transaction),
+            helpers.dom_id(@transaction),
             partial: "transactions/row",
-            locals: { t: @transaction, categories: @categories }
+            locals: { t: @transaction, categories: @categories, flash_updated: false }
           ), status: :unprocessable_entity
         end
+
         format.html do
           redirect_to transactions_path(month: params[:month], account_id: params[:account_id]),
                       alert: @transaction.errors.full_messages.to_sentence
@@ -73,7 +78,6 @@ class TransactionsController < ApplicationController
       end
     end
   end
-
 
   private
 
