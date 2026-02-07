@@ -8,7 +8,7 @@ class AccountsController < ApplicationController
   def show
     @account = Account.find(params[:id])
     @month = parse_month(params[:month]) || Date.current.beginning_of_month
-
+    @categories = Category.order(:group, :name)
     @transactions = @account.transactions
       .includes(:category)
       .where(occurred_on: @month..@month.end_of_month)
