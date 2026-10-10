@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RAILS_BIN="$APP_ROOT/bin/rails"
+BACKUP_DIR="/Users/ajs/backups/budget_app"
+EXPECTED_ENVIRONMENT="development"
+CONFIRMATION_PHRASE="NORMALIZE SIGNED LEDGER"
+NORMALIZATION_TOKEN="normalize-signed-ledger-v1"
+CURRENT_STEP="initialization"
+PARTIAL_BACKUP=""
+
+cleanup() {
+  if [[ -n "$PARTIAL_BACKUP" && -f "$PARTIAL_BACKUP" ]]; then
+    rm -f -- "$PARTIAL_BACKUP"
+  fi
+}
+
+on_error() {
+  local status=$?
+  printf '\nSigned-ledger conversion stopped during: %s\n' "$CURRENT_STEP" >&2
+  printf 'No later steps were run. Review the error above before retrying.\n' >&2
+  exit "$status"
+}
+
+trap cleanup EXIT
+trap on_error ERR
+
+cd "$APP_ROOT"
+
+export RAILS_ENV="${RAILS_ENV:-$EXPECTED_ENVIRONMENT}"
+if [[ "$RAILS_ENV" != "$EXPECTED_ENVIRONMENT" ]]; then
+  printf 'Refusing to run with RAILS_ENV=%s; this command is restricted to development.\n' "$RAILS_ENV" >&2
+  exit 1
+fi
+
+run_preflight() {
+  "$RAILS_BIN" budget:sign_preflight
+}
+
+read_summary() {
+  local output last_line
+  output="$("$RAILS_BIN" runner '
+    report = Ledger::SignPreflight.call
+    remaining_positive_expenses = Transaction.joins(:category)
+      .where(categories: { kind: "expense" }, starting_balance: false)
+      .where("amount_cents > 0")
+      .count
+    remaining_negative_income = Transaction.joins(:category)
+      .where(categories: { kind: "income" })
+      .where("amount_cents < 0")
+      .count
+    values = [
+      report[:normalization_state],
+      report.dig(:planned_changes, :transactions).size,
+      report.dig(:positive_amounts_by_category_kind, "income"),
+      report.dig(:planned_changes, :transactions).size,
+      report[:ambiguous_records].size,
+      remaining_positive_expenses,
+      remaining_negative_income
+    ]
+    puts values.join("|")
+  ')"
+  last_line="${output##*$'\n'}"
+  IFS='|' read -r NORMALIZATION_STATE PROPOSED_CHANGES POSITIVE_INCOME_COUNT EXPENSES_TO_NEGATIVE \
+    AMBIGUITY_COUNT REMAINING_POSITIVE_EXPENSES REMAINING_NEGATIVE_INCOME <<< "$last_line"
+
+  if [[ -z "$NORMALIZATION_STATE" || ! "$PROPOSED_CHANGES" =~ ^[0-9]+$ ||
+        ! "$POSITIVE_INCOME_COUNT" =~ ^[0-9]+$ || ! "$EXPENSES_TO_NEGATIVE" =~ ^[0-9]+$ ||
+        ! "$AMBIGUITY_COUNT" =~ ^[0-9]+$ || ! "$REMAINING_POSITIVE_EXPENSES" =~ ^[0-9]+$ ||
+        ! "$REMAINING_NEGATIVE_INCOME" =~ ^[0-9]+$ ]]; then
+    printf 'Could not parse the deterministic preflight summary.\n' >&2
+    return 1
+  fi
+}
+
+CURRENT_STEP="initial sign preflight"
+printf 'Running initial signed-ledger preflight...\n'
+run_preflight
+read_summary
+
+if [[ "$NORMALIZATION_STATE" == "completed" ]]; then
+  printf '\nSigned-ledger normalization is already marked complete; no backup, migration, normalization, or tests were run.\n'
+  exit 0
+fi
+
+CURRENT_STEP="database identification"
+database_output="$("$RAILS_BIN" runner 'puts ActiveRecord::Base.connection_db_config.database')"
+DATABASE_NAME="${database_output##*$'\n'}"
+if [[ "$DATABASE_NAME" != "budget_app_development" ]]; then
+  printf 'Refusing to run against unexpected database: %s\n' "$DATABASE_NAME" >&2
+  exit 1
+fi
+
+CURRENT_STEP="database backup"
+if ! command -v pg_dump >/dev/null 2>&1; then
+  printf 'pg_dump is required but was not found in PATH.\n' >&2
+  exit 1
+fi
+
+umask 077
+mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+
+timestamp="$(date '+%Y%m%d-%H%M%S')"
+BACKUP_PATH="$BACKUP_DIR/budget_app_development-pre-signed-ledger-$timestamp.dump"
+PARTIAL_BACKUP="$BACKUP_PATH.partial.$$"
+
+if [[ -e "$BACKUP_PATH" || -e "$PARTIAL_BACKUP" ]]; then
+  printf 'Refusing to overwrite an existing backup path: %s\n' "$BACKUP_PATH" >&2
+  exit 1
+fi
+
+printf '\nCreating PostgreSQL backup...\n'
+if ! pg_dump --format=custom --no-owner --file="$PARTIAL_BACKUP" "$DATABASE_NAME"; then
+  printf 'pg_dump failed; stopping before migrations or normalization.\n' >&2
+  exit 1
+fi
+
+if [[ ! -f "$PARTIAL_BACKUP" || ! -s "$PARTIAL_BACKUP" ]]; then
+  printf 'Backup verification failed: pg_dump output is missing or empty.\n' >&2
+  exit 1
+fi
+
+if ! ln "$PARTIAL_BACKUP" "$BACKUP_PATH"; then
+  printf 'Could not finalize backup without overwriting an existing file.\n' >&2
+  exit 1
+fi
+rm -f -- "$PARTIAL_BACKUP"
+PARTIAL_BACKUP=""
+
+if [[ ! -f "$BACKUP_PATH" || ! -s "$BACKUP_PATH" ]]; then
+  printf 'Backup verification failed after finalizing the backup file.\n' >&2
+  exit 1
+fi
+printf 'Verified backup: %s\n' "$BACKUP_PATH"
+
+CURRENT_STEP="database migrations"
+printf '\nApplying database migrations...\n'
+"$RAILS_BIN" db:migrate
+
+CURRENT_STEP="post-migration sign preflight"
+printf '\nRunning post-migration signed-ledger preflight...\n'
+run_preflight
+read_summary
+
+printf '\nReady to normalize signed ledger\n'
+printf '  Rails environment:             %s\n' "$RAILS_ENV"
+printf '  Database:                      %s\n' "$DATABASE_NAME"
+printf '  Verified backup:               %s\n' "$BACKUP_PATH"
+printf '  Proposed transaction changes:  %s\n' "$PROPOSED_CHANGES"
+printf '  Income records staying positive: %s\n' "$POSITIVE_INCOME_COUNT"
+printf '  Expense records becoming negative: %s\n' "$EXPENSES_TO_NEGATIVE"
+printf '  Ambiguity count:               %s\n' "$AMBIGUITY_COUNT"
+printf '  Normalization state:           %s\n' "$NORMALIZATION_STATE"
+
+if [[ "$AMBIGUITY_COUNT" != "0" ]]; then
+  printf 'Refusing to normalize because ambiguities remain.\n' >&2
+  exit 1
+fi
+if [[ "$NORMALIZATION_STATE" != "legacy" ]]; then
+  printf 'Refusing to normalize from unexpected state: %s\n' "$NORMALIZATION_STATE" >&2
+  exit 1
+fi
+
+if [[ ! -t 0 ]]; then
+  printf 'Interactive terminal input is required; piped confirmation is not accepted.\n' >&2
+  exit 1
+fi
+
+printf '\nType exactly: %s\n> ' "$CONFIRMATION_PHRASE"
+IFS= read -r typed_confirmation || true
+if [[ "$typed_confirmation" != "$CONFIRMATION_PHRASE" ]]; then
+  printf 'Confirmation did not match exactly. Normalization was not run.\n' >&2
+  exit 1
+fi
+
+CURRENT_STEP="signed-ledger normalization"
+printf '\nNormalizing signed ledger...\n'
+CONFIRM="$NORMALIZATION_TOKEN" "$RAILS_BIN" budget:normalize
+
+CURRENT_STEP="post-normalization verification"
+printf '\nVerifying normalized ledger...\n'
+run_preflight
+read_summary
+
+if [[ "$NORMALIZATION_STATE" != "completed" || "$PROPOSED_CHANGES" != "0" ||
+      "$AMBIGUITY_COUNT" != "0" || "$REMAINING_POSITIVE_EXPENSES" != "0" ||
+      "$REMAINING_NEGATIVE_INCOME" != "0" ]]; then
+  printf 'Post-normalization verification failed: state=%s proposed_changes=%s ambiguities=%s positive_expenses=%s negative_income=%s\n' \
+    "$NORMALIZATION_STATE" "$PROPOSED_CHANGES" "$AMBIGUITY_COUNT" \
+    "$REMAINING_POSITIVE_EXPENSES" "$REMAINING_NEGATIVE_INCOME" >&2
+  exit 1
+fi
+
+CURRENT_STEP="test suite"
+printf '\nRunning test suite...\n'
+"$RAILS_BIN" test
+
+CURRENT_STEP="complete"
+printf '\nSigned-ledger conversion completed successfully.\n'
+printf 'Backup retained at: %s\n' "$BACKUP_PATH"

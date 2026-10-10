@@ -8,6 +8,8 @@ Income estimates and recurring expenses are both entered and stored as positive 
 
 Before converting a database created under the legacy unsigned-expense behavior, run `bin/rails budget:sign_preflight`. Review and resolve every blocker before running the separately confirmed normalization command documented by that task.
 
+For the reviewed one-time development conversion, run `bin/normalize_signed_ledger`. It performs both preflights, creates and verifies a private PostgreSQL backup, applies migrations, requires the exact interactive phrase `NORMALIZE SIGNED LEDGER`, normalizes once, verifies the completion marker, and runs the test suite.
+
 This README would normally document whatever steps are necessary to get the
 application up and running.
 

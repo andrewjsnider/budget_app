@@ -7,7 +7,7 @@ namespace :budget do
   end
 
   desc "Normalize legacy ledger signs after an explicit reviewed preflight"
-  task normalize_signs: :environment do
+  task normalize: :environment do
     result = Ledger::SignNormalizer.call(confirm: ENV["CONFIRM"])
 
     if result[:status] == :already_completed
@@ -25,4 +25,7 @@ namespace :budget do
          Ledger::SignNormalizer::MigrationRequired => e
     abort e.message
   end
+
+  desc "Alias for budget:normalize"
+  task normalize_signs: :normalize
 end
