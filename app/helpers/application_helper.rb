@@ -17,4 +17,14 @@ module ApplicationHelper
 
     current_direction == "asc" ? "ascending" : "descending"
   end
+
+  def signed_currency(cents)
+    return "—" if cents.nil?
+
+    amount = number_to_currency(cents.abs / 100.0)
+    return "+#{amount}" if cents.positive?
+    return "−#{amount}" if cents.negative?
+
+    amount
+  end
 end

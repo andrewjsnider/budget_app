@@ -25,6 +25,11 @@ class ReportsUtilitiesTest < ActionDispatch::IntegrationTest
     assert_select "thead th", text: "Electric"
     assert_select "thead th", text: "Water"
     refute_select "thead th", text: "Groceries"
+    assert_select "h2", text: "Monthly utility spending"
+    assert_select "h2", text: "Spending by utility over time"
+    assert_select "h2", text: "Utility breakdown"
+    assert_select "article h3", text: "Electric"
+    assert_select "article h3", text: "Water"
 
     rows = rendered_rows
     assert_equal [ "$100.00", "$67.89", "$167.89" ], rows.fetch("2026-02")
