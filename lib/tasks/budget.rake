@@ -1,6 +1,69 @@
 require "json"
 
 namespace :budget do
+  desc "Import a historical CSV into the ledger without duplicating transactions"
+  task import_transactions: :environment do
+    abort "FILE is required" if ENV["FILE"].blank?
+    abort "ACCOUNT is required (the source CSV has no account column)" if ENV["ACCOUNT"].blank?
+    abort "AFTER is required and must use YYYY-MM-DD" if ENV["AFTER"].blank?
+
+    after = Date.iso8601(ENV.fetch("AFTER"))
+    account = Account.find_by(import_key: ENV.fetch("ACCOUNT"))
+    abort "Account not found for import key: #{ENV.fetch('ACCOUNT')}" unless account
+
+    result = Transactions::HistoricalImport.call(
+      file_path: ENV.fetch("FILE"),
+      account: account,
+      after: after,
+      dry_run: ENV["DRY_RUN"] == "1"
+    )
+
+    if ENV["JSON"] == "1"
+      puts JSON.pretty_generate(result)
+    else
+      puts "Historical transaction import"
+      puts "File: #{result.fetch(:file)}"
+      puts "Account: #{result.fetch(:account_import_key)}"
+      puts "After (exclusive): #{result.fetch(:after)}"
+      puts "Dry run: #{result.fetch(:dry_run)}"
+      puts "Total source rows: #{result.fetch(:total_source_rows)}"
+      puts "Rows at/before cutoff: #{result.fetch(:rows_at_or_before_cutoff)}"
+      puts "Eligible rows: #{result.fetch(:eligible_rows)}"
+      puts "Already present by provenance: #{result.fetch(:already_present_count)}"
+      puts "Definite existing matches: #{result.fetch(:definite_match_count)}"
+      puts "Ambiguous possible duplicates: #{result.fetch(:ambiguous_count)}"
+      puts "Clear new transactions: #{result.fetch(:clear_new_count)}"
+      puts "Created transactions: #{result.fetch(:created_count)}"
+      puts "Malformed rows: #{result.fetch(:malformed_count)}"
+      puts ""
+      puts "Apply result"
+      puts "Eligible: #{result.fetch(:eligible)}"
+      puts "Created: #{result.fetch(:created)}"
+      puts "Matched existing: #{result.fetch(:matched_existing)}"
+      puts "Ambiguous skipped: #{result.fetch(:ambiguous_skipped)}"
+      puts "Failed: #{result.fetch(:failed)}"
+      if result.fetch(:manual_review_required)
+        puts "Completed successfully; manual review remains for skipped or malformed rows."
+      else
+        puts "Completed successfully; no manual review remains."
+      end
+
+      result.fetch(:ambiguous_rows).each do |row|
+        puts "Ambiguous row #{row.fetch(:source_row_number)}: #{row.fetch(:date)} #{row.fetch(:description)} #{row.fetch(:signed_amount_cents)} cents"
+        row.fetch(:candidate_transactions).each do |candidate|
+          puts "  Candidate #{candidate.fetch(:id)}: #{candidate.fetch(:date)} #{candidate.fetch(:description)} #{candidate.fetch(:signed_amount_cents)} cents"
+          puts "    Evidence: #{candidate.fetch(:evidence).to_json}"
+        end
+      end
+    end
+  rescue ArgumentError => e
+    abort "Invalid AFTER date: #{e.message}"
+  rescue MonthlyProcessing::PathSafety::UnsafePath,
+         Transactions::HistoricalImport::InvalidSource,
+         ActiveRecord::RecordInvalid => e
+    abort e.message
+  end
+
   desc "Process one private finance month and write a deterministic review bundle"
   task process_month: :environment do
     abort "MONTH is required and must use YYYY-MM" if ENV["MONTH"].blank?

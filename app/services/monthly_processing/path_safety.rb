@@ -16,6 +16,40 @@ module MonthlyProcessing
       raise UnsafePath, "Cannot inspect source directory: #{e.message}"
     end
 
+    # Resolve one financial source file. Repository-contained files are only
+    # permitted below Rails.root/private; all other repository paths remain
+    # rejected while external paths retain the existing behavior.
+    def self.source_file(path, label: "Financial source file")
+      supplied = Pathname.new(path.to_s)
+      candidate = supplied.absolute? ? supplied : Rails.root.join(supplied)
+      raise UnsafePath, "#{label} does not exist: #{candidate}" unless candidate.file?
+      raise UnsafePath, "#{label} cannot be a symbolic link" if candidate.symlink?
+
+      real_path = candidate.realpath
+      repository = Rails.root.realpath
+      repository_prefix = "#{repository}#{File::SEPARATOR}"
+      expanded = candidate.expand_path
+      return real_path unless expanded == repository || expanded.to_s.start_with?(repository_prefix)
+
+      private_root = repository.join("private")
+      raise UnsafePath, "#{label} must be inside Rails.root/private" unless private_root.directory?
+
+      private_prefix = "#{private_root.expand_path}#{File::SEPARATOR}"
+      unless expanded.to_s.start_with?(private_prefix)
+        raise UnsafePath, "#{label} must be inside Rails.root/private"
+      end
+
+      private_real = private_root.realpath
+      private_real_prefix = "#{private_real}#{File::SEPARATOR}"
+      unless real_path.to_s.start_with?(private_real_prefix)
+        raise UnsafePath, "#{label} must be inside Rails.root/private"
+      end
+
+      real_path
+    rescue SystemCallError => e
+      raise UnsafePath, "Cannot inspect #{label.downcase}: #{e.message}"
+    end
+
     def self.contained_file(root:, relative_path:, label: "Statement file")
       relative = Pathname.new(relative_path.to_s)
       if relative.absolute? || relative.each_filename.include?("..") || relative.to_s.blank?

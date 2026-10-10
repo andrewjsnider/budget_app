@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export RBENV_ROOT="/Users/ajs/.rbenv"
+export RBENV_VERSION="3.3.9"
+export PATH="$RBENV_ROOT/shims:/usr/local/opt/rbenv/bin:$PATH"
+
+export PGHOST="127.0.0.1"
+export PGPORT="5432"
+
+cd /Users/ajs/workspace/budget_app
+
+exec "$@"
+
