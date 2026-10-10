@@ -11,14 +11,15 @@ module Reconciliations
       :ready_to_finalize
     )
 
-    def self.call(statement_import:, opening_balance_cents: nil)
-      new(statement_import: statement_import, opening_balance_cents: opening_balance_cents).call
+    def self.call(statement_import:, opening_balance_cents: nil, entries: nil)
+      new(statement_import: statement_import, opening_balance_cents: opening_balance_cents, entries: entries).call
     end
 
-    def initialize(statement_import:, opening_balance_cents:)
+    def initialize(statement_import:, opening_balance_cents:, entries:)
       @statement_import = statement_import
       @account = statement_import.account
       @explicit_opening_balance_cents = opening_balance_cents
+      @provided_entries = entries
     end
 
     def call
@@ -99,9 +100,10 @@ module Reconciliations
     def validate_overlaps(blockers)
       return if @statement_import.started_on.nil? || @statement_import.ended_on.nil?
 
-      overlap = @account.reconciliations
-        .where(status: "finalized")
-        .where.not(statement_import_id: @statement_import.id)
+      overlap_scope = @account.reconciliations.where(status: "finalized")
+      current_reconciliation_id = @statement_import.reconciliation&.id if @statement_import.persisted?
+      overlap_scope = overlap_scope.where.not(id: current_reconciliation_id) if current_reconciliation_id
+      overlap = overlap_scope
         .where("starts_on <= ? AND ends_on >= ?", @statement_import.ended_on, @statement_import.started_on)
         .order(:id)
         .first
@@ -134,6 +136,8 @@ module Reconciliations
     end
 
     def entries
+      return @provided_entries if @provided_entries
+
       @entries ||= @statement_import.statement_entries.includes(ledger_transaction: :reconciliation).order(:source_row_number, :id).to_a
     end
 

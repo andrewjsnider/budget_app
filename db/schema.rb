@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_09_220000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_09_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -88,6 +88,42 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_220000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_ledger_normalizations_on_key", unique: true
+  end
+
+  create_table "monthly_processing_run_statements", force: :cascade do |t|
+    t.bigint "monthly_processing_run_id", null: false
+    t.bigint "statement_import_id", null: false
+    t.integer "position", null: false
+    t.string "staging_status", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["monthly_processing_run_id", "position"], name: "index_month_run_statements_on_run_and_position", unique: true
+    t.index ["monthly_processing_run_id", "statement_import_id"], name: "index_month_run_statements_on_run_and_import", unique: true
+    t.index ["monthly_processing_run_id"], name: "index_month_run_statements_on_run"
+    t.index ["statement_import_id"], name: "index_month_run_statements_on_import"
+    t.check_constraint "\"position\" >= 0", name: "monthly_processing_run_statements_position"
+    t.check_constraint "staging_status::text = ANY (ARRAY['staged'::character varying, 'existing'::character varying]::text[])", name: "monthly_processing_run_statements_staging_status"
+  end
+
+  create_table "monthly_processing_runs", force: :cascade do |t|
+    t.date "month", null: false
+    t.string "status", null: false
+    t.datetime "started_at", null: false
+    t.datetime "completed_at"
+    t.boolean "dry_run", default: false, null: false
+    t.string "input_digest", null: false
+    t.string "policy_version", null: false
+    t.text "source_root", null: false
+    t.text "output_path"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["input_digest"], name: "index_monthly_processing_runs_on_input_digest"
+    t.index ["month", "created_at"], name: "index_monthly_processing_runs_on_month_and_created_at"
+    t.check_constraint "(status::text = ANY (ARRAY['pending'::character varying, 'running'::character varying]::text[])) OR completed_at IS NOT NULL", name: "monthly_processing_runs_terminal_completed_at"
+    t.check_constraint "EXTRACT(day FROM month) = 1::numeric", name: "monthly_processing_runs_month_first_day"
+    t.check_constraint "input_digest::text ~ '^[0-9a-f]{64}$'::text", name: "monthly_processing_runs_input_digest"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'running'::character varying, 'completed'::character varying, 'blocked'::character varying, 'failed'::character varying]::text[])", name: "monthly_processing_runs_status"
   end
 
   create_table "payee_rules", force: :cascade do |t|
@@ -259,6 +295,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_220000) do
   add_foreign_key "income_estimates", "income_sources"
   add_foreign_key "income_sources", "accounts"
   add_foreign_key "income_sources", "categories"
+  add_foreign_key "monthly_processing_run_statements", "monthly_processing_runs", on_delete: :restrict
+  add_foreign_key "monthly_processing_run_statements", "statement_imports", on_delete: :restrict
   add_foreign_key "payee_rules", "categories"
   add_foreign_key "reconciliations", "accounts"
   add_foreign_key "reconciliations", "statement_imports", on_delete: :restrict

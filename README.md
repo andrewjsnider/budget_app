@@ -86,6 +86,33 @@ Rows from overlapping source files keep their independent Phase 2 provenance. A 
 
 The existing browser reconciliation screen is labeled legacy. It remains available for historical/manual date-range records, while new staged statements use the statement-backed commands above.
 
+## Monthly processing boundary
+
+Each private month directory must contain `manifest.yml`; account identity is never inferred from filenames. A minimal manifest is:
+
+```yaml
+month: 2026-10
+statements:
+  - account: primary-checking
+    file: statements/checking.csv
+    parser: generic_signed_csv
+    starts_on: 2026-10-01
+    ends_on: 2026-10-31
+    ending_balance: "4812.37"
+```
+
+Preview October without database writes:
+
+```sh
+bin/rails budget:process_month MONTH=2026-10 DRY_RUN=1 JSON=1
+```
+
+The default source is `/Users/ajs/Private/finance/2026-10`; the default output is its `output` directory. Override them with `SOURCE_DIR` and `OUTPUT_DIR`. Both directories must remain outside this repository.
+
+After reviewing the preview, omit `DRY_RUN=1` to stage new imports and persist an auditable `MonthlyProcessingRun`. Apply mode still does not match ambiguous entries, create or ignore transactions, or finalize reconciliation. Each invocation writes a new private `output/runs/<run-name>/` bundle containing `process_run.json`, `statements.json`, `unresolved_items.json`, `reconciliation_summary.json`, and `reconciliation_summary.md`.
+
+The local Paperclip boundary and prohibitions are documented in [docs/paperclip_personal_finance_agent.md](docs/paperclip_personal_finance_agent.md). Paperclip reads the generated bundle; it does not receive database credentials or authority to mutate financial records.
+
 This README would normally document whatever steps are necessary to get the
 application up and running.
 

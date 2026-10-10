@@ -3,7 +3,7 @@ module StatementEntries
     NOISE_TOKENS = %w[pos debit credit purchase card transaction pending].freeze
 
     def self.call(description)
-      ActiveSupport::Inflector.transliterate(description.to_s)
+      ActiveSupport::Inflector.transliterate(utf8(description))
         .downcase
         .gsub(/[^a-z0-9]+/, " ")
         .split
@@ -21,7 +21,12 @@ module StatementEntries
     end
 
     def self.exact?(left, right)
-      left.to_s.downcase.strip.gsub(/\s+/, " ") == right.to_s.downcase.strip.gsub(/\s+/, " ")
+      utf8(left).downcase.strip.gsub(/\s+/, " ") == utf8(right).downcase.strip.gsub(/\s+/, " ")
     end
+
+    def self.utf8(value)
+      value.to_s.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "")
+    end
+    private_class_method :utf8
   end
 end

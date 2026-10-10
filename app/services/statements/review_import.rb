@@ -1,21 +1,23 @@
 module Statements
   class ReviewImport
-    def self.call(statement_import:, opening_balance_cents: nil)
-      new(statement_import: statement_import, opening_balance_cents: opening_balance_cents).call
+    def self.call(statement_import:, opening_balance_cents: nil, entries: nil)
+      new(statement_import: statement_import, opening_balance_cents: opening_balance_cents, entries: entries).call
     end
 
-    def initialize(statement_import:, opening_balance_cents:)
+    def initialize(statement_import:, opening_balance_cents:, entries:)
       @statement_import = statement_import
       @opening_balance_cents = opening_balance_cents
+      @entries = entries
     end
 
     def call
-      entry_results = @statement_import.statement_entries.includes(:ledger_transaction).order(:source_row_number, :id).map do |entry|
+      entry_results = review_entries.map do |entry|
         entry_result(entry)
       end
       calculation = Reconciliations::StatementCalculator.call(
         statement_import: @statement_import,
-        opening_balance_cents: @opening_balance_cents
+        opening_balance_cents: @opening_balance_cents,
+        entries: @entries
       )
 
       {
@@ -43,6 +45,12 @@ module Statements
     end
 
     private
+
+    def review_entries
+      return @entries.sort_by { |entry| [ entry.source_row_number, entry.id.to_i ] } if @entries
+
+      @statement_import.statement_entries.includes(:ledger_transaction).order(:source_row_number, :id).to_a
+    end
 
     def entry_result(entry)
       match_result = StatementEntries::Matcher.call(entry: entry)

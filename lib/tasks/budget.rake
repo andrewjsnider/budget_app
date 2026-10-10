@@ -1,4 +1,39 @@
+require "json"
+
 namespace :budget do
+  desc "Process one private finance month and write a deterministic review bundle"
+  task process_month: :environment do
+    abort "MONTH is required and must use YYYY-MM" if ENV["MONTH"].blank?
+
+    result = MonthlyProcessing::ProcessMonth.call(
+      month: ENV.fetch("MONTH"),
+      source_dir: ENV["SOURCE_DIR"],
+      output_dir: ENV["OUTPUT_DIR"],
+      dry_run: ENV["DRY_RUN"] == "1"
+    )
+    process_run = result.fetch(:process_run).merge(output_path: result.fetch(:output_path))
+
+    if ENV["JSON"] == "1"
+      puts JSON.pretty_generate(process_run)
+    else
+      puts "Monthly processing: #{process_run.fetch(:status)}"
+      puts "Month: #{process_run.fetch(:month)}"
+      puts "Dry run: #{process_run.fetch(:dry_run)}"
+      puts "Statements: #{process_run.fetch(:statement_count)}"
+      puts "Newly staged or previewed: #{process_run.fetch(:staged_count)}"
+      puts "Existing imports: #{process_run.fetch(:existing_count)}"
+      puts "Blocked statements: #{process_run.fetch(:blocked_count)}"
+      puts "Output: #{process_run.fetch(:output_path)}"
+    end
+  rescue MonthlyProcessing::Manifest::InvalidManifest,
+         MonthlyProcessing::PathSafety::UnsafePath,
+         MonthlyProcessing::OutputWriter::WriteError,
+         MonthlyProcessing::ProcessMonth::ExistingImportMismatch,
+         Statements::Parsers::GenericSignedCsv::FatalError,
+         ActiveRecord::RecordInvalid => e
+    abort e.message
+  end
+
   desc "Report legacy ledger signs and blockers without changing data"
   task sign_preflight: :environment do
     report = Ledger::SignPreflight.call

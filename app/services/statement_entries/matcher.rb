@@ -87,6 +87,8 @@ module StatementEntries
     end
 
     def rejected_transaction_ids
+      return Set.new unless @entry.persisted?
+
       @rejected_transaction_ids ||= @entry.statement_entry_resolutions
         .where(action: "candidate_rejected")
         .where.not(transaction_id: nil)

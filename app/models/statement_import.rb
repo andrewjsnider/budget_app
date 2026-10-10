@@ -4,6 +4,8 @@ class StatementImport < ApplicationRecord
   belongs_to :account
   has_many :statement_entries, dependent: :restrict_with_error
   has_one :reconciliation, dependent: :restrict_with_error
+  has_many :monthly_processing_run_statements, dependent: :restrict_with_error
+  has_many :monthly_processing_runs, through: :monthly_processing_run_statements
 
   validates :source_filename, :source_path, :file_sha256, :parser_key, :parser_version, presence: true
   validates :file_sha256,
