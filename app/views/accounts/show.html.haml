@@ -16,7 +16,7 @@
 
       %div{ class: "flex items-center gap-2 flex-wrap justify-end" }
         = link_to "Legacy direct CSV import", new_account_transactions_import_path(@account), class: "border border-stone-900 px-3 py-2 text-sm bg-stone-900 text-white hover:bg-stone-700"
-        = link_to "New reconciliation", new_account_reconciliation_path(@account), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        = link_to "Legacy reconciliation", new_account_reconciliation_path(@account), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
         = link_to "Uncategorized", account_uncategorized_path(@account, month: @month.strftime("%Y-%m")), class: "border border-stone-900 px-3 py-2 text-sm hover:bg-stone-900 hover:text-white"
         = link_to "Back", accounts_path, class: "text-sm underline text-stone-700 hover:text-stone-900"
 

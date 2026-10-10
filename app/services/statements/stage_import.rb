@@ -118,6 +118,7 @@ module Statements
         base_key = Statements::SourceIdentity.base_key(row)
         occurrences[base_key] += 1
         row.merge(
+          resolution_status: row[:status] == "parsed" ? "unresolved" : nil,
           source_identity: Statements::SourceIdentity.call(
             account_id: account.id,
             file_sha256: file_sha256,

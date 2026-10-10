@@ -1,6 +1,8 @@
 %div{ class: "max-w-4xl mx-auto px-6 py-10 text-stone-900" }
-  %h1{ class: "text-3xl font-semibold" } Reconcile
+  %h1{ class: "text-3xl font-semibold" } Legacy date-range reconciliation
   %p{ class: "mt-2 text-stone-700" }= @account.name
+  %p{ class: "mt-2 border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" }
+    Use the statement review commands for newly staged statements. This screen remains only for historical/manual date-range reconciliation.
 
   - if flash[:alert].present?
     %div{ class: "mt-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
@@ -36,4 +38,4 @@
               %td{ class: "p-3" }= t.description
               %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents / 100.0)
 
-    = submit_tag "Reconcile", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+    = submit_tag "Legacy reconcile", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"

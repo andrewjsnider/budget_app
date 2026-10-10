@@ -2,6 +2,8 @@ class Transaction < ApplicationRecord
   belongs_to :category
   belongs_to :account
   belongs_to :reconciliation, optional: true
+  has_many :statement_entries, dependent: :restrict_with_error
+  has_many :statement_entry_resolutions, dependent: :restrict_with_error
 
   before_destroy :ensure_not_reconciled
 

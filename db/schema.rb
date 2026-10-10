@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_09_210100) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_09_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -113,7 +113,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_210100) do
     t.integer "starting_balance_cents"
     t.integer "computed_ending_balance_cents"
     t.integer "difference_cents"
+    t.bigint "statement_import_id"
+    t.index ["account_id", "starts_on", "ends_on"], name: "index_finalized_reconciliations_on_account_and_period", unique: true, where: "((status)::text = 'finalized'::text)"
     t.index ["account_id"], name: "index_reconciliations_on_account_id"
+    t.index ["statement_import_id"], name: "index_reconciliations_on_statement_import_id", unique: true
+    t.check_constraint "statement_import_id IS NULL OR starts_on IS NOT NULL AND ends_on IS NOT NULL AND statement_ending_balance_cents IS NOT NULL", name: "statement_reconciliations_require_statement_fields"
+    t.check_constraint "status::text <> 'finalized'::text OR difference_cents = 0 AND reconciled_at IS NOT NULL", name: "reconciliations_finalized_exactly"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'finalized'::character varying]::text[])", name: "reconciliations_status"
   end
 
   create_table "recurring_expenses", force: :cascade do |t|
@@ -160,14 +166,38 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_210100) do
     t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "transaction_id"
+    t.string "resolution_status"
+    t.text "ignored_reason"
+    t.datetime "resolved_at"
     t.index ["source_identity"], name: "index_statement_entries_on_source_identity", unique: true
     t.index ["source_transaction_id"], name: "index_statement_entries_on_source_transaction_id"
     t.index ["statement_import_id", "source_row_number"], name: "index_statement_entries_on_import_and_row", unique: true
+    t.index ["statement_import_id", "transaction_id"], name: "index_statement_entries_on_import_and_transaction", unique: true, where: "(transaction_id IS NOT NULL)"
     t.index ["statement_import_id"], name: "index_statement_entries_on_statement_import_id"
+    t.index ["transaction_id"], name: "index_statement_entries_on_transaction_id"
     t.check_constraint "source_identity::text ~ '^[0-9a-f]{64}$'::text", name: "statement_entries_source_identity_format"
     t.check_constraint "source_row_number > 0", name: "statement_entries_positive_row_number"
+    t.check_constraint "status::text = 'failed'::text AND resolution_status IS NULL AND transaction_id IS NULL AND ignored_reason IS NULL AND resolved_at IS NULL OR status::text = 'parsed'::text AND ((resolution_status::text = ANY (ARRAY['unresolved'::character varying, 'ambiguous'::character varying]::text[])) AND transaction_id IS NULL AND ignored_reason IS NULL AND resolved_at IS NULL OR (resolution_status::text = ANY (ARRAY['matched'::character varying, 'new_transaction'::character varying]::text[])) AND transaction_id IS NOT NULL AND ignored_reason IS NULL AND resolved_at IS NOT NULL OR resolution_status::text = 'ignored'::text AND transaction_id IS NULL AND ignored_reason IS NOT NULL AND resolved_at IS NOT NULL)", name: "statement_entries_resolution_fields"
     t.check_constraint "status::text = 'parsed'::text AND amount_cents IS NOT NULL AND (posted_on IS NOT NULL OR transaction_on IS NOT NULL) AND error_code IS NULL AND error_message IS NULL OR status::text = 'failed'::text AND error_code IS NOT NULL AND error_message IS NOT NULL", name: "statement_entries_status_fields"
     t.check_constraint "status::text = ANY (ARRAY['parsed'::character varying, 'failed'::character varying]::text[])", name: "statement_entries_status"
+  end
+
+  create_table "statement_entry_resolutions", force: :cascade do |t|
+    t.bigint "statement_entry_id", null: false
+    t.bigint "transaction_id"
+    t.string "action", null: false
+    t.string "decision_source", null: false
+    t.text "reason"
+    t.jsonb "evidence", default: {}, null: false
+    t.datetime "resolved_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["statement_entry_id"], name: "index_statement_entry_resolutions_on_statement_entry_id"
+    t.index ["transaction_id"], name: "index_statement_entry_resolutions_on_transaction_id"
+    t.check_constraint "action::text <> 'ignored'::text OR reason IS NOT NULL", name: "statement_entry_resolutions_ignore_reason"
+    t.check_constraint "action::text = ANY (ARRAY['matched_existing'::character varying, 'created_transaction'::character varying, 'ignored'::character varying, 'marked_ambiguous'::character varying, 'candidate_rejected'::character varying]::text[])", name: "statement_entry_resolutions_action"
+    t.check_constraint "decision_source::text = ANY (ARRAY['automatic'::character varying, 'human'::character varying]::text[])", name: "statement_entry_resolutions_source"
   end
 
   create_table "statement_imports", force: :cascade do |t|
@@ -231,10 +261,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_210100) do
   add_foreign_key "income_sources", "categories"
   add_foreign_key "payee_rules", "categories"
   add_foreign_key "reconciliations", "accounts"
+  add_foreign_key "reconciliations", "statement_imports", on_delete: :restrict
   add_foreign_key "recurring_expenses", "accounts"
   add_foreign_key "recurring_expenses", "categories"
   add_foreign_key "sessions", "users"
   add_foreign_key "statement_entries", "statement_imports", on_delete: :restrict
+  add_foreign_key "statement_entries", "transactions", on_delete: :restrict
+  add_foreign_key "statement_entry_resolutions", "statement_entries", on_delete: :restrict
+  add_foreign_key "statement_entry_resolutions", "transactions", on_delete: :restrict
   add_foreign_key "statement_imports", "accounts", on_delete: :restrict
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
