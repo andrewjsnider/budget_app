@@ -11,6 +11,16 @@
         {},
         class: "w-full border border-stone-300 p-2"
 
+    %div
+      %label{ class: "block text-sm text-stone-700" } Statement import key
+      = f.text_field :import_key,
+        placeholder: "primary-checking",
+        autocapitalize: "none",
+        autocomplete: "off",
+        class: "w-full border border-stone-300 p-2 font-mono"
+      %p{ class: "mt-1 text-xs text-stone-600" }
+        Required for active accounts. Use lowercase letters, numbers, and hyphens. It cannot be changed after a statement is staged.
+
     - if f.object.persisted?
       %div
         %label{ class: "inline-flex items-center gap-2 text-sm" }

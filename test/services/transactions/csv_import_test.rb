@@ -80,4 +80,19 @@ class TransactionsCsvImportTest < ActiveSupport::TestCase
     assert_equal 0, r2[:imported]
     assert_equal 1, r2[:skipped]
   end
+
+  def test_invalid_rows_are_counted_instead_of_silently_dropped
+    csv = <<~CSV
+      Date,Description,Amount
+      not-a-date,Bad date,-1.00
+      2026-03-02,Bad amount,nope
+    CSV
+
+    result = Transactions::CsvImport.call(account: @account, csv_text: csv, default_category: @uncat)
+
+    assert result[:ok]
+    assert_equal 0, result[:imported]
+    assert_equal 2, result[:failed]
+    assert_equal 2, result[:errors].size
+  end
 end

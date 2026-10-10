@@ -1,7 +1,7 @@
 %div{ class: "max-w-xl mx-auto px-6 py-10 text-stone-900" }
-  %h1{ class: "text-3xl font-semibold" } Import transactions (CSV)
+  %h1{ class: "text-3xl font-semibold" } Direct ledger import (legacy CSV)
   %p{ class: "mt-2 text-stone-700" }
-    Upload a CSV export from your bank. Transactions will be imported into this account and categorized as “Uncategorized”.
+    This writes directly to ledger transactions and categorizes them as “Uncategorized”. New monthly statement processing should use the staged statement command instead.
 
   = form_with url: account_transactions_import_path(@account), method: :post, multipart: true, data: { turbo: false }, class: "mt-6 space-y-4" do
     %div

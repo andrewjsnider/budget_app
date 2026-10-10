@@ -5,6 +5,25 @@ class AccountTest < ActiveSupport::TestCase
     assert build(:account).valid?
   end
 
+  def test_active_account_requires_a_normalized_unique_import_key
+    account = build(:account, import_key: nil, archived: false)
+    assert_not account.valid?
+    assert_includes account.errors[:import_key], "can't be blank"
+
+    account.import_key = "Primary Checking"
+    assert_not account.valid?
+    assert_includes account.errors[:import_key].join, "lowercase letters"
+
+    create(:account, import_key: "primary-checking")
+    duplicate = build(:account, import_key: "primary-checking")
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors[:import_key], "has already been taken"
+  end
+
+  def test_archived_account_can_remain_unconfigured
+    assert build(:account, import_key: nil, archived: true).valid?
+  end
+
   def test_signed_transactions_determine_balance
     account = create(:account)
     income = create(:category, kind: "income")

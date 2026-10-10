@@ -2,6 +2,8 @@ require "csv"
 
 module Transactions
   class CsvImport
+    class RowError < StandardError; end
+
     def self.call(account:, csv_text:, default_category:)
       new(account:, csv_text:, default_category:).call
     end
@@ -33,10 +35,11 @@ module Transactions
       rows.each_with_index do |row, idx|
         begin
           attrs = build_attrs_from_row(row)
-          next if attrs.nil?
-
           Transaction.create!(attrs)
           imported += 1
+        rescue RowError => e
+          failed += 1
+          errors << "Row #{idx + 2}: #{e.message}"
         rescue ActiveRecord::RecordNotUnique
           skipped += 1
         rescue ActiveRecord::RecordInvalid => e
@@ -67,15 +70,15 @@ module Transactions
     end
 
     def build_attrs_from_row(row)
-      date = parse_date(value_for(row, ["posting date", "date", "transaction date", "posted date"]))
-      return nil unless date
+      date = parse_date(value_for(row, [ "posting date", "date", "transaction date", "posted date" ]))
+      raise RowError, "missing or invalid date" unless date
 
-      description = parse_description(value_for(row, ["description"]))
+      description = parse_description(value_for(row, [ "description" ]))
       description = description.to_s.gsub(/\s+/, " ").strip
       description = description[0, 255]
 
-      raw_amount = dollars_to_cents(value_for(row, ["amount"]))
-      return nil if raw_amount.nil?
+      raw_amount = dollars_to_cents(value_for(row, [ "amount" ]))
+      raise RowError, "missing or invalid amount" if raw_amount.nil?
 
       amount_cents = raw_amount
 
@@ -150,11 +153,8 @@ module Transactions
     end
 
     def dollars_to_cents(raw)
-      return nil if raw.blank?
-      s = raw.to_s.strip.gsub(/[,$]/, "")
-      bd = BigDecimal(s)
-      (bd * 100).to_i
-    rescue
+      Statements::DecimalCents.call(raw)
+    rescue Statements::DecimalCents::InvalidAmount
       nil
     end
 

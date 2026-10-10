@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_09_190000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_09_210100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,7 +20,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_190000) do
     t.boolean "archived"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "import_key"
+    t.index ["import_key"], name: "index_accounts_on_import_key", unique: true
+    t.check_constraint "import_key IS NULL OR import_key::text ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "accounts_import_key_format"
   end
+
+  add_check_constraint "accounts", "archived IS TRUE OR import_key IS NOT NULL", name: "active_accounts_require_import_key", validate: false
 
   create_table "budget_items", force: :cascade do |t|
     t.bigint "budget_month_id", null: false
@@ -138,6 +143,57 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_190000) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "statement_entries", force: :cascade do |t|
+    t.bigint "statement_import_id", null: false
+    t.integer "source_row_number", null: false
+    t.string "source_transaction_id"
+    t.date "posted_on"
+    t.date "transaction_on"
+    t.text "raw_description"
+    t.text "normalized_description"
+    t.string "merchant_key"
+    t.integer "amount_cents"
+    t.jsonb "raw_payload", default: {}, null: false
+    t.string "source_identity", null: false
+    t.string "status", null: false
+    t.string "error_code"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_identity"], name: "index_statement_entries_on_source_identity", unique: true
+    t.index ["source_transaction_id"], name: "index_statement_entries_on_source_transaction_id"
+    t.index ["statement_import_id", "source_row_number"], name: "index_statement_entries_on_import_and_row", unique: true
+    t.index ["statement_import_id"], name: "index_statement_entries_on_statement_import_id"
+    t.check_constraint "source_identity::text ~ '^[0-9a-f]{64}$'::text", name: "statement_entries_source_identity_format"
+    t.check_constraint "source_row_number > 0", name: "statement_entries_positive_row_number"
+    t.check_constraint "status::text = 'parsed'::text AND amount_cents IS NOT NULL AND (posted_on IS NOT NULL OR transaction_on IS NOT NULL) AND error_code IS NULL AND error_message IS NULL OR status::text = 'failed'::text AND error_code IS NOT NULL AND error_message IS NOT NULL", name: "statement_entries_status_fields"
+    t.check_constraint "status::text = ANY (ARRAY['parsed'::character varying, 'failed'::character varying]::text[])", name: "statement_entries_status"
+  end
+
+  create_table "statement_imports", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "source_filename", null: false
+    t.string "source_path", null: false
+    t.string "file_sha256", null: false
+    t.string "parser_key", null: false
+    t.string "parser_version", null: false
+    t.date "started_on"
+    t.date "ended_on"
+    t.integer "statement_ending_balance_cents"
+    t.string "status", null: false
+    t.integer "row_count", default: 0, null: false
+    t.integer "parsed_count", default: 0, null: false
+    t.integer "failed_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "file_sha256"], name: "index_statement_imports_on_account_id_and_file_sha256", unique: true
+    t.index ["account_id"], name: "index_statement_imports_on_account_id"
+    t.check_constraint "file_sha256::text ~ '^[0-9a-f]{64}$'::text", name: "statement_imports_file_sha256_format"
+    t.check_constraint "row_count >= 0 AND parsed_count >= 0 AND failed_count >= 0 AND row_count = (parsed_count + failed_count)", name: "statement_imports_consistent_counts"
+    t.check_constraint "source_path::text !~ '(^|/)\\.\\.(/|$)'::text AND \"left\"(source_path::text, 1) <> '/'::text", name: "statement_imports_relative_source_path"
+    t.check_constraint "status::text = ANY (ARRAY['staged'::character varying, 'failed'::character varying, 'reviewed'::character varying, 'superseded'::character varying]::text[])", name: "statement_imports_status"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.date "occurred_on", null: false
     t.string "description"
@@ -178,6 +234,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_190000) do
   add_foreign_key "recurring_expenses", "accounts"
   add_foreign_key "recurring_expenses", "categories"
   add_foreign_key "sessions", "users"
+  add_foreign_key "statement_entries", "statement_imports", on_delete: :restrict
+  add_foreign_key "statement_imports", "accounts", on_delete: :restrict
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
   add_foreign_key "transactions", "reconciliations", on_delete: :restrict

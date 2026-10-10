@@ -86,7 +86,7 @@ class AccountsController < ApplicationController
   end
 
   def account_params
-    params.require(:account).permit(:name, :kind, :archived)
+    params.require(:account).permit(:name, :kind, :import_key, :archived)
   end
 
   def parse_month(value)
