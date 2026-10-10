@@ -5,6 +5,9 @@
       %p{ class: "mt-2 text-stone-700" }= @month.strftime("%B %Y")
 
     = form_with url: budget_path, method: :get, class: "flex items-end gap-3" do |f|
+      - if @budget_sort.present?
+        = hidden_field_tag :sort, @budget_sort
+        = hidden_field_tag :direction, @budget_direction
       %div
         %label{ class: "block text-sm text-stone-700" } Month
         = month_field_tag :month,
@@ -42,7 +45,7 @@
       Available becomes
       %strong $180.
 
-  = form_with url: budget_month_path(month: @month.strftime("%Y-%m")), method: :patch, class: "mt-10", data: { turbo: false} do
+  = form_with url: budget_month_path(month: @month.strftime("%Y-%m"), sort: @budget_sort, direction: @budget_direction), method: :patch, class: "mt-10", data: { turbo: false} do
     %div{ class: "flex items-center justify-between" }
       %h2{ class: "text-lg font-semibold" } Categories
       = submit_tag "Save", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
@@ -51,11 +54,16 @@
       %table{ class: "w-full text-sm" }
         %thead
           %tr{ class: "border-b border-stone-200" }
-            %th{ class: "p-3 text-left" } Category
-            %th{ class: "p-3 text-left" } Group
-            %th{ class: "p-3 text-right" } Assigned
-            %th{ class: "p-3 text-right" } Activity
-            %th{ class: "p-3 text-right" } Available
+            %th{ class: "p-3 text-left", aria: { sort: sortable_header_aria_sort(key: "category", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Category", key: "category", default_direction: "asc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "p-3 text-left", aria: { sort: sortable_header_aria_sort(key: "group", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Group", key: "group", default_direction: "asc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "p-3 text-right", aria: { sort: sortable_header_aria_sort(key: "assigned", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Assigned", key: "assigned", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "p-3 text-right", aria: { sort: sortable_header_aria_sort(key: "activity", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Activity", key: "activity", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "p-3 text-right", aria: { sort: sortable_header_aria_sort(key: "available", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Available", key: "available", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
         %tbody
           - @rows.each do |row|
             - cat = row.category

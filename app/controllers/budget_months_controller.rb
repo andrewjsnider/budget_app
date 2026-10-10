@@ -1,7 +1,7 @@
 class BudgetMonthsController < ApplicationController
   def index
     month = parse_month(params[:month]) || Date.current.beginning_of_month
-    redirect_to budget_month_path(month: month.strftime("%Y-%m"))
+    redirect_to budget_month_path({ month: month.strftime("%Y-%m") }.merge(request.query_parameters.slice("sort", "direction")))
   end
 
   def show
@@ -20,11 +20,16 @@ class BudgetMonthsController < ApplicationController
     @assigned_total_cents = @budget_month.budget_items.sum(:assigned_cents)
     @to_assign_cents = @income_cents - @assigned_total_cents
 
-    @rows = BudgetMonthCategoryRows.new(
+    row_builder = BudgetMonthCategoryRows.new(
       month: @month,
       expense_categories: @expense_categories,
-      assigned_by_category_id: @assigned_by_category_id
-    ).rows
+      assigned_by_category_id: @assigned_by_category_id,
+      sort: params[:sort],
+      direction: params[:direction]
+    )
+    @rows = row_builder.rows
+    @budget_sort = row_builder.sort_key
+    @budget_direction = row_builder.direction
   end
 
   def update
@@ -42,7 +47,13 @@ class BudgetMonthsController < ApplicationController
       item.save!
     end
 
-    redirect_to budget_month_path(month: @month.strftime("%Y-%m")), notice: "Updated."
+    redirect_options = { month: @month.strftime("%Y-%m") }
+    if params[:sort].to_s.in?(BudgetMonthCategoryRows::SORT_KEYS)
+      redirect_options[:sort] = params[:sort]
+      redirect_options[:direction] = params[:direction].to_s.in?(BudgetMonthCategoryRows::DIRECTIONS) ? params[:direction] : BudgetMonthCategoryRows::DEFAULT_DIRECTIONS.fetch(params[:sort])
+    end
+
+    redirect_to budget_month_path(redirect_options), notice: "Updated."
   end
 
   private

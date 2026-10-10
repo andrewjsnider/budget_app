@@ -60,4 +60,66 @@ class BudgetMonthsTest < ActionDispatch::IntegrationTest
     assert_includes body, "$25.00"
     assert_includes body, "$75.00"
   end
+
+  def test_budget_page_sorts_each_meaningful_column_in_both_directions
+    sign_in @user
+    month = Date.new(2026, 2, 1)
+    account = create(:account)
+    alpha = create(:category, name: "Alpha", kind: "expense", group: "Zulu Group", archived: false)
+    zulu = create(:category, name: "Zulu", kind: "expense", group: "Alpha Group", archived: false)
+    budget_month = BudgetMonth.create!(month: month)
+    budget_month.budget_items.create!(category: alpha, assigned_cents: 10_000)
+    budget_month.budget_items.create!(category: zulu, assigned_cents: 20_000)
+    create(:transaction, occurred_on: month + 1, amount_cents: -3_000, category: alpha, account: account)
+    create(:transaction, occurred_on: month + 1, amount_cents: -1_000, category: zulu, account: account)
+
+    expected_ascending = {
+      "category" => %w[Alpha Zulu],
+      "group" => %w[Zulu Alpha],
+      "assigned" => %w[Alpha Zulu],
+      "activity" => %w[Zulu Alpha],
+      "available" => %w[Alpha Zulu]
+    }
+
+    expected_ascending.each do |sort_key, expected|
+      get budget_month_path(month: "2026-02", sort: sort_key, direction: "asc")
+      assert_equal expected, rendered_category_names, "expected #{sort_key} ascending"
+
+      get budget_month_path(month: "2026-02", sort: sort_key, direction: "desc")
+      assert_equal expected.reverse, rendered_category_names, "expected #{sort_key} descending"
+    end
+  end
+
+  def test_budget_sort_headers_toggle_and_month_form_preserves_sort
+    sign_in @user
+    create(:category, name: "Electric", kind: "expense", group: "utilities", archived: false)
+
+    get budget_month_path(month: "2026-02", sort: "assigned", direction: "desc")
+
+    assert_response :success
+    assert_select "th[aria-sort='descending'] a", text: /Assigned/ do |links|
+      assert_includes links.first["href"], "sort=assigned"
+      assert_includes links.first["href"], "direction=asc"
+    end
+    assert_select "form[method='get'] input[name='sort'][value='assigned']"
+    assert_select "form[method='get'] input[name='direction'][value='desc']"
+  end
+
+  def test_budget_default_and_unsupported_sort_keep_existing_group_name_order
+    sign_in @user
+    create(:category, name: "Alpha", kind: "expense", group: "Zulu Group", archived: false)
+    create(:category, name: "Zulu", kind: "expense", group: "Alpha Group", archived: false)
+
+    get budget_month_path(month: "2026-02")
+    assert_equal %w[Zulu Alpha], rendered_category_names
+
+    get budget_month_path(month: "2026-02", sort: "unsafe", direction: "sideways")
+    assert_equal %w[Zulu Alpha], rendered_category_names
+  end
+
+  private
+
+  def rendered_category_names
+    response.parsed_body.css("tbody tr").map { |row| row.css("td").first.text.strip }
+  end
 end

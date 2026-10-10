@@ -1,23 +1,29 @@
 class TransactionsController < ApplicationController
   include ActionView::RecordIdentifier
 
+  FILTER_KEYS = %i[
+    q account_id category_id start_date end_date flow reconciliation_status cleared_status
+  ].freeze
+  SEARCH_PARAM_KEYS = (FILTER_KEYS + %i[sort direction]).freeze
+
   def index
     @month = parse_month(params[:month]) || Date.current.beginning_of_month
-    @accounts = Account.where(archived: [false, nil]).order(:name)
+    @accounts = Account.where(archived: [ false, nil ]).order(:name)
     @account = params[:account_id].present? ? @accounts.find { |a| a.id == params[:account_id].to_i } : nil
 
     @category = params[:category_id].present? ? Category.find_by(id: params[:category_id]) : nil
     @categories = Category.order(:group, :name)
+    @filter_values = search_params
 
-    scope = Transaction
-      .includes(:category, :account)
-      .where(occurred_on: @month..@month.end_of_month)
-      .order(occurred_on: :desc, id: :desc)
-
-    scope = scope.where(account_id: @account.id) if @account.present?
-    scope = scope.where(category_id: @category.id) if @category.present?
-
-    @transactions = scope
+    search = TransactionSearch.new(
+      scope: Transaction.all,
+      params: @filter_values,
+      default_date_range: @month..@month.end_of_month
+    )
+    @transactions = search.call.includes(:category, :account)
+    @transaction_sort = search.sort_key
+    @transaction_direction = search.direction
+    @filters_active = FILTER_KEYS.any? { |key| @filter_values[key].present? }
   end
 
   def new
@@ -81,13 +87,17 @@ class TransactionsController < ApplicationController
 
   private
 
+  def search_params
+    SEARCH_PARAM_KEYS.index_with { |key| params[key] }
+  end
+
   def transaction_params
     params.require(:transaction).permit(:occurred_on, :description, :amount_cents, :category_id, :account_id)
   end
 
   def load_selects
-    @accounts = Account.where(archived: [false, nil]).order(:name)
-    @categories = Category.where(archived: [false, nil]).order(:kind, :group, :name)
+    @accounts = Account.where(archived: [ false, nil ]).order(:name)
+    @categories = Category.where(archived: [ false, nil ]).order(:kind, :group, :name)
   end
 
   def parse_month(value)
