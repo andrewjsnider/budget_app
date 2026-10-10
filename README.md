@@ -113,6 +113,64 @@ After reviewing the preview, omit `DRY_RUN=1` to stage new imports and persist a
 
 The local Paperclip boundary and prohibitions are documented in [docs/paperclip_personal_finance_agent.md](docs/paperclip_personal_finance_agent.md). Paperclip reads the generated bundle; it does not receive database credentials or authority to mutate financial records.
 
+## Approved Paperclip financial actions
+
+Paperclip may inspect and invoke only the deterministic commands below. Each mutation command accepts a reviewed JSON object through `INPUT`; keep these files under `Rails.root/private/` or in the external private finance directory. Use `DRY_RUN=1 JSON=1` first. Rails resolves exact IDs or names, validates signs and accounts, refuses ambiguous references, and protects reconciled transactions. Rails console and direct SQL remain prohibited.
+
+Categorize explicit transactions or apply active payee rules to an explicit transaction list:
+
+```json
+{
+  "mappings": [{"transaction_id": 123, "category": "Groceries"}],
+  "apply_payee_rules": true,
+  "transaction_ids": [124, 125]
+}
+```
+
+```sh
+bin/rails budget:categorize INPUT=private/actions/categorize.json DRY_RUN=1 JSON=1
+```
+
+Create or update payee rules. Apply mode always requires the reviewed confirmation token:
+
+```json
+{"rules": [{"pattern": "CITY WATER", "match_type": "contains", "category": "Utilities", "active": true}]}
+```
+
+```sh
+bin/rails budget:manage_payee_rules INPUT=private/actions/payee_rules.json DRY_RUN=1 JSON=1
+CONFIRM=apply-payee-rules-v1 bin/rails budget:manage_payee_rules INPUT=private/actions/payee_rules.json JSON=1
+```
+
+Classify exact transaction pairs as `internal_transfer`, `savings_transfer`, or `credit_card_payment`. Exact opposite amounts, different owned accounts, and dates within three days are required. Single positive inflows may be classified as `refund`, `reimbursement`, or `windfall`:
+
+```json
+{"classifications": [{"kind": "savings_transfer", "transaction_ids": [201, 202], "evidence": {"reviewed_by": "owner"}}]}
+```
+
+```sh
+bin/rails budget:classify_transactions INPUT=private/actions/classifications.json DRY_RUN=1 JSON=1
+```
+
+Record recurring expenses as positive magnitudes with type `subscription`, `utility`, `insurance`, `debt`, `essential`, `discretionary`, or `other`:
+
+```json
+{"recurring_expenses": [{"name": "Electric Company", "account": "primary-checking", "category": "Electric", "expense_type": "utility", "cadence": "monthly", "interval": 1, "day_of_month": 15, "estimated_amount_cents": 12500, "start_on": "2026-01-01", "active": true}]}
+```
+
+```sh
+bin/rails budget:manage_recurring_expenses INPUT=private/actions/recurring.json DRY_RUN=1 JSON=1
+```
+
+Build a next-month proposal. Apply mode persists only an idempotent `draft`; it never creates or approves a `BudgetMonth`:
+
+```sh
+bin/rails budget:propose_budget MONTH=2026-11 DRY_RUN=1 JSON=1
+bin/rails budget:propose_budget MONTH=2026-11 JSON=1
+```
+
+Transfer classifications leave ledger transactions intact but exclude them from budget income and expense analytics. Expense-category refunds remain included as positive offsets to spending. Reimbursements and windfalls remain explicitly distinguishable, and windfalls are excluded from the recurring-income history used alongside scheduled recurring income.
+
 This README would normally document whatever steps are necessary to get the
 application up and running.
 

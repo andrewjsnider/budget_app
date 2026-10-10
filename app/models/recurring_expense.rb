@@ -1,4 +1,6 @@
 class RecurringExpense < ApplicationRecord
+  EXPENSE_TYPES = %w[subscription utility insurance debt essential discretionary other].freeze
+
   belongs_to :account
   belongs_to :category
 
@@ -7,4 +9,5 @@ class RecurringExpense < ApplicationRecord
   validates :interval, numericality: { greater_than_or_equal_to: 1 }
   validates :estimated_amount_cents, numericality: { greater_than: 0 }
   validates :start_on, presence: true
+  validates :expense_type, inclusion: { in: EXPENSE_TYPES }
 end

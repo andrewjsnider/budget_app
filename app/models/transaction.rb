@@ -4,6 +4,10 @@ class Transaction < ApplicationRecord
   belongs_to :reconciliation, optional: true
   has_many :statement_entries, dependent: :restrict_with_error
   has_many :statement_entry_resolutions, dependent: :restrict_with_error
+  has_one :transaction_classification,
+    foreign_key: :transaction_id,
+    inverse_of: :ledger_transaction,
+    dependent: :restrict_with_error
 
   before_destroy :ensure_not_reconciled
 
@@ -11,6 +15,10 @@ class Transaction < ApplicationRecord
   validate :only_one_starting_balance_per_account
   validate :reconciled_financial_fields_are_immutable, on: :update
   validates :amount_cents, numericality: { other_than: 0 }
+
+  scope :excluding_transfers, -> {
+    where.not(id: TransactionClassification.transfers.select(:transaction_id))
+  }
 
   PROTECTED_RECONCILED_FIELDS = %w[
     amount_cents occurred_on account_id import_hash starting_balance

@@ -16,7 +16,7 @@ class BudgetMonthCategoryRows
   def rows
     category_ids = @expense_categories.map(&:id)
 
-    spent_by_category_id = Transaction
+    spent_by_category_id = Transaction.excluding_transfers
       .where(category_id: category_ids)
       .where(occurred_on: date_range)
       .group(:category_id)

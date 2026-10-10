@@ -5,6 +5,7 @@ class PayeeRule < ApplicationRecord
 
   validates :pattern, presence: true
   validates :match_type, inclusion: { in: MATCH_TYPES }
+  validate :regex_pattern_is_valid
 
   def matches?(description)
     d = description.to_s
@@ -22,5 +23,15 @@ class PayeeRule < ApplicationRecord
     end
   rescue RegexpError
     false
+  end
+
+  private
+
+  def regex_pattern_is_valid
+    return unless match_type == "regex" && pattern.present?
+
+    Regexp.new(pattern)
+  rescue RegexpError => e
+    errors.add(:pattern, "is not a valid regular expression: #{e.message}")
   end
 end

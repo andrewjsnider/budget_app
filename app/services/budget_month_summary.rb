@@ -19,7 +19,7 @@ class BudgetMonthSummary
   private
 
   def transactions
-    Transaction.where(
+    Transaction.excluding_transfers.where(
       occurred_on: @budget_month.month..@budget_month.month.end_of_month
     )
   end

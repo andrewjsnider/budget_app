@@ -8,8 +8,8 @@ class BudgetMonthsController < ApplicationController
     @month = parse_month(params[:month]) || Date.current.beginning_of_month
     @budget_month = BudgetMonth.find_or_create_by!(month: @month)
 
-    @expense_categories = Category.where(kind: "expense", archived: [false, nil]).order(:group, :name)
-    @income_cents = Transaction.joins(:category)
+    @expense_categories = Category.where(kind: "expense", archived: [ false, nil ]).order(:group, :name)
+    @income_cents = Transaction.excluding_transfers.joins(:category)
       .where(occurred_on: @month..@month.end_of_month)
       .where(categories: { kind: "income" })
       .sum(:amount_cents)

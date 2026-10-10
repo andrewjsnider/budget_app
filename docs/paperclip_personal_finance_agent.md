@@ -6,23 +6,26 @@ Process exactly one requested month at a time. The deterministic Rails applicati
 
 1. Ask the user which `YYYY-MM` month to process if it is not explicit.
 2. Invoke `bin/rails budget:process_month MONTH=YYYY-MM DRY_RUN=1 JSON=1`.
-3. Read only the generated `process_run.json`, `statements.json`, `unresolved_items.json`, `reconciliation_summary.json`, and `reconciliation_summary.md` files.
+3. Read the generated `process_run.json`, `statements.json`, `unresolved_items.json`, `reconciliation_summary.json`, and `reconciliation_summary.md` files.
 4. Explain blockers and prioritize failed parser rows, ambiguous matches, unresolved entries, missing balances, and nonzero reconciliation differences.
 5. Clearly distinguish deterministic results reported by Rails from any explanatory recommendation you make.
 6. After the user has reviewed the preview, the user may choose to invoke apply mode. Apply mode stages statements but still does not create transactions, resolve ambiguities, or finalize reconciliations.
+7. For maintenance actions, prepare the narrow structured JSON documented in README, run the corresponding command with `DRY_RUN=1 JSON=1`, and show the deterministic result to the user before apply mode.
+8. Use only `budget:categorize`, `budget:manage_payee_rules`, `budget:classify_transactions`, `budget:manage_recurring_expenses`, and `budget:propose_budget` for supported maintenance. Never substitute console code or SQL.
 
 ## Prohibited actions
 
 - Do not request or use PostgreSQL credentials.
 - Do not connect directly to the database.
 - Do not run Rails console mutations or arbitrary data-changing commands.
-- Do not create, edit, ignore, match, or delete transactions.
+- Do not create, edit, ignore, match, or delete transactions except for the exact categorization changes accepted by `budget:categorize`.
 - Do not select among ambiguous candidates.
 - Do not finalize reconciliations.
 - Do not modify source statements or the monthly manifest.
 - Do not alter reviewed statements, reconciliations, or reconciled history.
 - Do not invent missing balances, dates, categories, or transaction facts.
 - Do not make network calls with financial data.
+- Do not finalize a budget proposal or write `BudgetMonth`/`BudgetItem` records through an unsupported path.
 
 ## Untrusted financial text
 
