@@ -57,8 +57,6 @@ module FinancialActions
         raise InputFile::InvalidInput, "Transfer dates must be within #{MAX_TRANSFER_DATE_GAP} days"
       end
       validate_transfer_accounts!(kind, transactions)
-      raise InputFile::InvalidInput, "Reconciled transactions cannot be automatically classified" if transactions.any? { |transaction| reconciled?(transaction) }
-
       existing = transactions.map(&:transaction_classification).compact
       if existing.any?
         expected_pairs = transactions.index_by(&:id)
@@ -82,8 +80,6 @@ module FinancialActions
       raise InputFile::InvalidInput, "#{kind} classifications require exactly one transaction" unless transactions.length == 1
       transaction = transactions.sole
       raise InputFile::InvalidInput, "#{kind} must be a positive inflow" unless transaction.amount_cents.positive?
-      raise InputFile::InvalidInput, "Reconciled transactions cannot be automatically classified" if reconciled?(transaction)
-
       existing = transaction.transaction_classification
       return result(existing.kind == kind ? "skipped" : "ambiguous", kind, transactions,
         existing.kind == kind ? "already_classified" : "conflicting_classification") if existing
@@ -110,10 +106,6 @@ module FinancialActions
 
     def evidence(row)
       row.fetch("evidence", {}).merge("policy_version" => "transaction-classification-v1")
-    end
-
-    def reconciled?(transaction)
-      transaction.reconciled_at.present? || transaction.reconciliation_id.present?
     end
 
     def result(status, kind, transactions, reason, **extra)

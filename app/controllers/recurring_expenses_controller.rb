@@ -45,8 +45,8 @@ class RecurringExpensesController < ApplicationController
   end
 
   def load_selects
-    @accounts = Account.where(archived: [false, nil]).order(:name)
-    @categories = Category.where(kind: "expense", archived: [false, nil]).order(:group, :name)
+    @accounts = Account.where(archived: [ false, nil ]).order(:name)
+    @categories = Category.where(kind: "expense", archived: [ false, nil ]).order(:name)
     @cadences = %w[weekly biweekly monthly quarterly yearly]
   end
 end

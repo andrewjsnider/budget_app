@@ -12,7 +12,7 @@ class TransactionsController < ApplicationController
     @account = params[:account_id].present? ? @accounts.find { |a| a.id == params[:account_id].to_i } : nil
 
     @category = params[:category_id].present? ? Category.find_by(id: params[:category_id]) : nil
-    @categories = Category.order(:group, :name)
+    @categories = Category.order(:name)
     @filter_values = search_params
 
     search = TransactionSearch.new(
@@ -50,7 +50,7 @@ class TransactionsController < ApplicationController
 
   def update
     @transaction = Transaction.find(params[:id])
-    @categories = Category.order(:group, :name)
+    @categories = Category.order(:name)
 
     if @transaction.update(transaction_params)
       respond_to do |format|
@@ -97,7 +97,7 @@ class TransactionsController < ApplicationController
 
   def load_selects
     @accounts = Account.where(archived: [ false, nil ]).order(:name)
-    @categories = Category.where(archived: [ false, nil ]).order(:kind, :group, :name)
+    @categories = Category.where(archived: [ false, nil ]).order(:name)
   end
 
   def parse_month(value)

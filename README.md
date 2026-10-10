@@ -115,7 +115,9 @@ The local Paperclip boundary and prohibitions are documented in [docs/paperclip_
 
 ## Approved Paperclip financial actions
 
-Paperclip may inspect and invoke only the deterministic commands below. Each mutation command accepts a reviewed JSON object through `INPUT`; keep these files under `Rails.root/private/` or in the external private finance directory. Use `DRY_RUN=1 JSON=1` first. Rails resolves exact IDs or names, validates signs and accounts, refuses ambiguous references, and protects reconciled transactions. Rails console and direct SQL remain prohibited.
+Paperclip may inspect and invoke only the deterministic commands below. Each mutation command accepts a reviewed JSON object through `INPUT`; keep these files under `Rails.root/private/` or in the external private finance directory. Use `DRY_RUN=1 JSON=1` first. Rails resolves exact IDs or names, validates signs and accounts, refuses ambiguous references, and protects reconciled financial facts. Rails console and direct SQL remain prohibited.
+
+**Reconciliation freezes financial facts, not categorization metadata.** Reviewed categorization may change a reconciled transaction's category, including through an explicitly applied existing payee rule. Amount, date, account, sign, cleared/reconciliation state, statement linkage, and deletion remain protected. The structured categorization result records the prior and new category, evidence source, policy version, and whether the transaction was reconciled.
 
 Categorize explicit transactions or apply active payee rules to an explicit transaction list:
 
@@ -151,6 +153,8 @@ Classify exact transaction pairs as `internal_transfer`, `savings_transfer`, or 
 ```sh
 bin/rails budget:classify_transactions INPUT=private/actions/classifications.json DRY_RUN=1 JSON=1
 ```
+
+Reviewed classifications are stored as separate auditable metadata and may be added to reconciled transactions when all classification validations pass. They never rewrite the underlying transactions or reconciliation records.
 
 Record recurring expenses as positive magnitudes with type `subscription`, `utility`, `insurance`, `debt`, `essential`, `discretionary`, or `other`:
 

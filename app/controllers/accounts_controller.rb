@@ -2,13 +2,13 @@ class AccountsController < ApplicationController
   before_action :set_account, only: %i[edit update starting_balance create_starting_balance]
 
   def index
-    @accounts = Account.where(archived: [false, nil]).order(:name)
+    @accounts = Account.where(archived: [ false, nil ]).order(:name)
   end
 
   def show
     @account = Account.find(params[:id])
     @month = parse_month(params[:month]) || Date.current.beginning_of_month
-    @categories = Category.order(:group, :name)
+    @categories = Category.order(:name)
     @transactions = @account.transactions
       .includes(:category)
       .where(occurred_on: @month..@month.end_of_month)

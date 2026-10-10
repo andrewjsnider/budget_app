@@ -1,6 +1,6 @@
 class CategoriesController < ApplicationController
   def index
-    @categories = Category.order(:kind, :group, :name)
+    @categories = Category.order(:name)
   end
 
   def new

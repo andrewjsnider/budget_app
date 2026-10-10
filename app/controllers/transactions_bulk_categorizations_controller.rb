@@ -2,7 +2,7 @@ class TransactionsBulkCategorizationsController < ApplicationController
   def show
     @account = Account.find(params[:account_id])
     @month = params[:month].present? ? Date.strptime(params[:month], "%Y-%m") : Date.current.beginning_of_month
-    @categories = Category.order(:group, :name)
+    @categories = Category.order(:name)
 
     txs = @account.transactions
       .where(occurred_on: @month..@month.end_of_month)

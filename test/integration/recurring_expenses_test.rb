@@ -15,6 +15,16 @@ class RecurringExpensesTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Recurring expenses"
   end
 
+  def test_category_dropdown_is_alphabetical
+    FactoryBot.create(:category, name: "Zulu", kind: "expense", archived: false)
+    FactoryBot.create(:category, name: "Alpha", kind: "expense", archived: false)
+
+    get new_recurring_expense_path
+
+    options = response.parsed_body.css("select[name='recurring_expense[category_id]'] option").map { |option| option.text.strip }
+    assert_operator options.index("Alpha"), :<, options.index("Zulu")
+  end
+
   def test_create_recurring_expense
     assert_difference -> { RecurringExpense.count }, 1 do
       post recurring_expenses_path, params: {

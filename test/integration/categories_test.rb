@@ -40,4 +40,15 @@ class CategoriesTest < ActionDispatch::IntegrationTest
     assert_redirected_to categories_path
     assert Category.exists?(name: "Power", group: "Utilities", kind: "expense")
   end
+
+  def test_categories_index_is_alphabetical
+    sign_in(@user)
+    FactoryBot.create(:category, name: "Zulu", kind: "expense")
+    FactoryBot.create(:category, name: "Alpha", kind: "income")
+
+    get categories_path
+
+    names = response.parsed_body.css("tbody tr td:first-child").map { |cell| cell.text.strip }
+    assert_equal %w[Alpha Zulu], names
+  end
 end

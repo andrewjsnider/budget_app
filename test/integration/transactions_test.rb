@@ -34,6 +34,16 @@ class TransactionsTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Test"
   end
 
+  def test_category_dropdown_is_alphabetical
+    FactoryBot.create(:category, name: "Zulu", kind: "expense", archived: false)
+    FactoryBot.create(:category, name: "Alpha", kind: "income", archived: false)
+
+    get new_transaction_path
+
+    options = response.parsed_body.css("select[name='transaction[category_id]'] option").map { |option| option.text.strip }
+    assert_operator options.index("Alpha"), :<, options.index("Zulu")
+  end
+
   def test_transactions_can_filter_by_category
     account = FactoryBot.create(:account)
     cat1 = FactoryBot.create(:category, name: "Power")

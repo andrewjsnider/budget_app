@@ -13,6 +13,8 @@ Process exactly one requested month at a time. The deterministic Rails applicati
 7. For maintenance actions, prepare the narrow structured JSON documented in README, run the corresponding command with `DRY_RUN=1 JSON=1`, and show the deterministic result to the user before apply mode.
 8. Use only `budget:categorize`, `budget:manage_payee_rules`, `budget:classify_transactions`, `budget:manage_recurring_expenses`, and `budget:propose_budget` for supported maintenance. Never substitute console code or SQL.
 
+Reconciliation freezes financial facts, not categorization metadata. A reviewed `budget:categorize` action may change category metadata on a reconciled transaction, including by explicitly applying an existing payee rule. A reviewed `budget:classify_transactions` action may add separate classification metadata when its deterministic validations pass.
+
 ## Prohibited actions
 
 - Do not request or use PostgreSQL credentials.
@@ -22,7 +24,7 @@ Process exactly one requested month at a time. The deterministic Rails applicati
 - Do not select among ambiguous candidates.
 - Do not finalize reconciliations.
 - Do not modify source statements or the monthly manifest.
-- Do not alter reviewed statements, reconciliations, or reconciled history.
+- Do not alter reviewed statements, reconciliation records, statement links, or reconciled financial facts such as amount, date, account, sign, cleared state, or reconciliation membership.
 - Do not invent missing balances, dates, categories, or transaction facts.
 - Do not make network calls with financial data.
 - Do not finalize a budget proposal or write `BudgetMonth`/`BudgetItem` records through an unsupported path.

@@ -23,7 +23,7 @@ module FinancialActions
 
       counts = results.group_by { |row| row.fetch(:status) }.transform_values(&:count)
       {
-        policy_version: "categorize-transactions-v1",
+        policy_version: "categorize-transactions-v2",
         dry_run: @dry_run,
         categorized: counts.fetch("categorized", 0),
         skipped: counts.fetch("skipped", 0),
@@ -44,14 +44,12 @@ module FinancialActions
       if transaction.category_id == category.id
         return result(transaction_id, "skipped", "already_categorized", from_category_id: transaction.category_id, to_category_id: category.id, evidence: evidence)
       end
-      if reconciled?(transaction)
-        return result(transaction_id, "failed", "reconciled_transaction", from_category_id: transaction.category_id, to_category_id: category.id, evidence: evidence)
-      end
 
       transaction.update!(category: category) unless @dry_run
       result(transaction_id, "categorized", @dry_run ? "would_categorize" : "categorized",
         from_category_id: transaction.category_id_before_last_save || transaction.category_id,
         to_category_id: category.id,
+        reconciled: reconciled?(transaction),
         evidence: evidence)
     rescue KeyError, ReferenceResolver::MissingReference, ReferenceResolver::AmbiguousReference,
            ActiveRecord::RecordInvalid => e

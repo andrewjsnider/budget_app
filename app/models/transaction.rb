@@ -22,7 +22,7 @@ class Transaction < ApplicationRecord
 
   PROTECTED_RECONCILED_FIELDS = %w[
     amount_cents occurred_on account_id import_hash starting_balance
-    reconciliation_id reconciled_at
+    cleared reconciliation_id reconciled_at
   ].freeze
 
   private

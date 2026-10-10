@@ -32,19 +32,42 @@ class TransactionTest < ActiveSupport::TestCase
   end
 
   def test_reconciled_financial_fields_are_immutable
-    transaction = FactoryBot.create(:transaction, reconciled_at: Time.current, import_hash: "original")
+    reconciliation = FactoryBot.create(:reconciliation, account: @account)
+    transaction = FactoryBot.create(
+      :transaction,
+      account: @account,
+      category: @category,
+      reconciliation: reconciliation,
+      reconciled_at: Time.current,
+      cleared: true,
+      import_hash: "original"
+    )
     replacement_account = FactoryBot.create(:account)
+    mutations = {
+      amount_cents: -transaction.amount_cents,
+      occurred_on: transaction.occurred_on + 1.day,
+      account: replacement_account,
+      import_hash: "replacement",
+      starting_balance: true,
+      cleared: false,
+      reconciliation: nil,
+      reconciled_at: nil
+    }
 
-    assert_not transaction.update(amount_cents: transaction.amount_cents - 100)
-    assert_includes transaction.errors[:base].join, "amount_cents"
-    assert_not transaction.update(occurred_on: transaction.occurred_on + 1.day)
-    assert_includes transaction.errors[:base].join, "occurred_on"
-    assert_not transaction.update(account: replacement_account)
-    assert_includes transaction.errors[:base].join, "account_id"
-    assert_not transaction.update(import_hash: "replacement")
-    assert_includes transaction.errors[:base].join, "import_hash"
-    assert_not transaction.update(reconciled_at: nil)
-    assert_includes transaction.errors[:base].join, "reconciled_at"
+    mutations.each do |attribute, value|
+      candidate = transaction.reload
+      assert_not candidate.update(attribute => value), "expected #{attribute} to remain immutable"
+      protected_attribute = attribute == :account ? "account_id" : attribute == :reconciliation ? "reconciliation_id" : attribute.to_s
+      assert_includes candidate.errors[:base].join, protected_attribute
+    end
+  end
+
+  def test_reconciled_transaction_cannot_be_deleted
+    transaction = FactoryBot.create(:transaction, reconciled_at: Time.current)
+
+    assert_not transaction.destroy
+    assert_includes transaction.errors[:base], "Cannot delete a reconciled transaction"
+    assert Transaction.exists?(transaction.id)
   end
 
   def test_reconciled_category_can_be_corrected_without_changing_financial_history
