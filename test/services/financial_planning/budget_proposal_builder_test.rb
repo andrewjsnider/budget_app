@@ -53,4 +53,29 @@ class FinancialPlanning::BudgetProposalBuilderTest < ActiveSupport::TestCase
     assert_equal 1, BudgetProposal.where(month: month).count
     assert_nil BudgetMonth.find_by(month: month)
   end
+
+  test "excludes non-budget categories from history and proposed categories" do
+    month = Date.new(2026, 11, 1)
+    account = create(:account, kind: "checking")
+    income = create(:category, name: "Pay", kind: "income")
+    normal = create(:category, name: "Groceries", kind: "expense")
+    uncategorized = create(:category, name: "Uncategorized", kind: "expense")
+    card_payments = create(:category, name: "Credit Card Payments", kind: "expense")
+    history_month = month.prev_month
+
+    create(:transaction, account:, category: normal, occurred_on: history_month, amount_cents: -10_000)
+    create(:transaction, account:, category: uncategorized, occurred_on: history_month, amount_cents: -20_000)
+    create(:transaction, account:, category: card_payments, occurred_on: history_month, amount_cents: -30_000)
+
+    proposal = FinancialPlanning::BudgetProposalBuilder.call(month:, dry_run: true).fetch(:proposal)
+    proposed_names = proposal.fetch(:proposed_categories).map { |row| row.fetch(:category_name) }
+    history = proposal.fetch(:historical_category_spending_cents).fetch("3")
+
+    assert_includes proposed_names, "Groceries"
+    refute_includes proposed_names, "Uncategorized"
+    refute_includes proposed_names, "Credit Card Payments"
+    assert_equal 3_333, history.fetch(normal.id.to_s)
+    refute history.key?(uncategorized.id.to_s)
+    refute history.key?(card_payments.id.to_s)
+  end
 end

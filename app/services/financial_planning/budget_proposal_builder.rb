@@ -5,6 +5,7 @@ module FinancialPlanning
   class BudgetProposalBuilder
     BUFFER_BASIS_POINTS = 500
     HISTORY_WINDOWS = [ 3, 6, 12 ].freeze
+    NON_BUDGET_CATEGORY_NAMES = [ "Uncategorized", "Credit Card Payments" ].freeze
 
     def self.call(month:, dry_run:, source: "paperclip")
       new(month:, dry_run:, source:).call
@@ -119,7 +120,7 @@ module FinancialPlanning
       HISTORY_WINDOWS.to_h do |months|
         start_on = @month.prev_month(months)
         end_on = @month - 1.day
-        sums = external_transactions.joins(:category)
+        sums = budget_transactions.joins(:category)
           .where(occurred_on: start_on..end_on, categories: { kind: "expense" })
           .group(:category_id)
           .sum(:amount_cents)
@@ -131,7 +132,7 @@ module FinancialPlanning
     def proposed_categories(obligations)
       previous_items = BudgetMonth.find_by(month: @month.prev_month)&.budget_items&.index_by(&:category_id) || {}
       spending = historical_category_spending
-      Category.where(kind: "expense", archived: [ false, nil ]).order(:id).filter_map do |category|
+      budget_categories.order(:id).filter_map do |category|
         history_values = HISTORY_WINDOWS.to_h { |months| [ months.to_s, spending.fetch(months.to_s, {}).fetch(category.id.to_s, 0) ] }
         recurring = obligations.fetch(category.id.to_s, 0)
         previous = previous_items[category.id]&.assigned_cents.to_i
@@ -156,6 +157,16 @@ module FinancialPlanning
 
     def external_transactions
       Transaction.excluding_transfers
+    end
+
+    def budget_transactions
+      external_transactions.joins(:category)
+        .where.not(categories: { name: NON_BUDGET_CATEGORY_NAMES })
+    end
+
+    def budget_categories
+      Category.where(kind: "expense", archived: [ false, nil ])
+        .where.not(name: NON_BUDGET_CATEGORY_NAMES)
     end
 
     def canonical(value)
