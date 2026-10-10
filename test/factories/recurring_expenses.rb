@@ -5,7 +5,7 @@ FactoryBot.define do
     interval { 1 }
     day_of_month { 15 }
     weekday { nil }
-    estimated_amount_cents { -75_00 }
+    estimated_amount_cents { 75_00 }
     start_on { Date.current.beginning_of_month }
     end_on { nil }
     active { true }

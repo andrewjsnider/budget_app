@@ -1,5 +1,4 @@
 require "csv"
-require "digest"
 
 module Transactions
   class CsvImport
@@ -78,7 +77,7 @@ module Transactions
       raw_amount = dollars_to_cents(value_for(row, ["amount"]))
       return nil if raw_amount.nil?
 
-      amount_cents = raw_amount.abs
+      amount_cents = raw_amount
 
       matched_category = apply_payee_rule_category(description)
       category = matched_category || category_for(raw_amount)
@@ -161,7 +160,12 @@ module Transactions
 
     def fingerprint(date:, description:, amount_cents:)
       normalized_desc = description.to_s.downcase.strip.gsub(/\s+/, " ")
-      Digest::SHA256.hexdigest([@account.id, date.to_s, amount_cents.to_s, normalized_desc].join("|"))
+      Transactions::ImportFingerprint.call(
+        account_id: @account.id,
+        occurred_on: date,
+        description: normalized_desc,
+        amount_cents: amount_cents
+      )
     end
   end
 end

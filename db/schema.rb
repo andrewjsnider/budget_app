@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_09_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,6 +28,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
     t.integer "assigned_cents"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["budget_month_id", "category_id"], name: "index_budget_items_on_budget_month_id_and_category_id", unique: true
     t.index ["budget_month_id"], name: "index_budget_items_on_budget_month_id"
     t.index ["category_id"], name: "index_budget_items_on_category_id"
   end
@@ -36,6 +37,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
     t.date "month"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["month"], name: "index_budget_months_on_month", unique: true
   end
 
   create_table "categories", force: :cascade do |t|
@@ -74,6 +76,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
     t.index ["category_id"], name: "index_income_sources_on_category_id"
   end
 
+  create_table "ledger_normalizations", force: :cascade do |t|
+    t.string "key", null: false
+    t.datetime "completed_at", null: false
+    t.jsonb "details", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_ledger_normalizations_on_key", unique: true
+  end
+
   create_table "payee_rules", force: :cascade do |t|
     t.string "pattern", null: false
     t.string "match_type", default: "contains", null: false
@@ -93,6 +104,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
     t.datetime "reconciled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "status", default: "draft", null: false
+    t.integer "starting_balance_cents"
+    t.integer "computed_ending_balance_cents"
+    t.integer "difference_cents"
     t.index ["account_id"], name: "index_reconciliations_on_account_id"
   end
 
@@ -124,22 +139,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
   end
 
   create_table "transactions", force: :cascade do |t|
-    t.date "occurred_on"
+    t.date "occurred_on", null: false
     t.string "description"
-    t.integer "amount_cents"
+    t.integer "amount_cents", null: false
     t.string "account_name"
     t.bigint "category_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "account_id"
+    t.bigint "account_id", null: false
     t.boolean "cleared"
     t.datetime "reconciled_at"
     t.boolean "starting_balance", default: false, null: false
     t.string "import_hash"
+    t.bigint "reconciliation_id"
     t.index ["account_id", "import_hash"], name: "index_transactions_on_account_id_and_import_hash", unique: true
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["account_id"], name: "index_transactions_one_starting_balance_per_account", unique: true, where: "(starting_balance = true)"
     t.index ["category_id"], name: "index_transactions_on_category_id"
+    t.index ["reconciliation_id"], name: "index_transactions_on_reconciliation_id"
+    t.check_constraint "amount_cents <> 0", name: "transactions_amount_cents_nonzero"
   end
 
   create_table "users", force: :cascade do |t|
@@ -162,4 +180,5 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_06_204417) do
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
+  add_foreign_key "transactions", "reconciliations", on_delete: :restrict
 end

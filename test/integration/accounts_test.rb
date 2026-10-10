@@ -17,7 +17,7 @@ class AccountsTest < ActionDispatch::IntegrationTest
       category: category,
       occurred_on: Date.current.beginning_of_month + 2.days,
       description: "Market",
-      amount_cents: 1234
+      amount_cents: -1234
     )
 
     get accounts_path
@@ -28,5 +28,6 @@ class AccountsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "Market"
     assert_includes @response.body, "Groceries"
+    assert_includes @response.body, "-$12.34"
   end
 end

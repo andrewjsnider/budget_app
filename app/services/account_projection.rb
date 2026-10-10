@@ -57,7 +57,7 @@ class AccountProjection
 
   def projected_expense_occurrences
     RecurringExpense.includes(:account).where(active: [true, nil], account_id: @account.id).flat_map do |rule|
-      expand_rule(rule, label_prefix: rule.name, amount_cents: rule.estimated_amount_cents)
+      expand_rule(rule, label_prefix: rule.name, amount_cents: -rule.estimated_amount_cents)
     end
   end
 
@@ -132,7 +132,7 @@ class AccountProjection
 
   def last_reconciled
     @account.reconciliations
-      .where.not(reconciled_at: nil)
+      .where(status: "finalized")
       .order(ends_on: :desc, reconciled_at: :desc, id: :desc)
       .first
   end

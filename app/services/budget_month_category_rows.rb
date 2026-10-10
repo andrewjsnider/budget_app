@@ -24,15 +24,14 @@ class BudgetMonthCategoryRows
 
     @expense_categories.map do |cat|
       assigned = @assigned_by_category_id[cat.id].to_i
-      spent = spent_by_category_id[cat.id].to_i
-
-      activity = -spent
+      net_activity = spent_by_category_id[cat.id].to_i
+      spent = -net_activity
 
       Row.new(
         category: cat,
         assigned_cents: assigned,
-        activity_cents: activity,
-        available_cents: assigned + activity
+        activity_cents: spent,
+        available_cents: assigned - spent
       )
     end
   end

@@ -13,6 +13,11 @@ class AccountsController < ApplicationController
       .includes(:category)
       .where(occurred_on: @month..@month.end_of_month)
       .order(occurred_on: :desc, id: :desc)
+
+    summary = AccountMonthSummary.new(account: @account, month: @month)
+    @opening_balance_cents = summary.opening_balance_cents
+    @activity_cents = summary.activity_cents
+    @ending_balance_cents = summary.ending_balance_cents
   end
 
   def new

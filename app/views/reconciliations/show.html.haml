@@ -2,7 +2,11 @@
   %h1{ class: "text-3xl font-semibold" } Reconciliation
   %p{ class: "mt-2 text-stone-700" }= @account.name
   %div{ class: "mt-6 border border-stone-200 p-4" }
+    %div Status: #{@reconciliation.status.titleize}
     %div Starts: #{@reconciliation.starts_on}
     %div Ends: #{@reconciliation.ends_on}
+    %div Starting balance: #{number_to_currency(@reconciliation.starting_balance_cents.to_i / 100.0)}
+    %div Computed ending balance: #{number_to_currency(@reconciliation.computed_ending_balance_cents.to_i / 100.0)}
     %div Statement ending balance: #{number_to_currency(@reconciliation.statement_ending_balance_cents / 100.0)}
+    %div Difference: #{number_to_currency(@reconciliation.difference_cents.to_i / 100.0)}
     %div Reconciled at: #{@reconciliation.reconciled_at || "not reconciled"}

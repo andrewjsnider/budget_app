@@ -45,7 +45,7 @@ class BudgetMonthsTest < ActionDispatch::IntegrationTest
     Transaction.create!(
       occurred_on: month + 9,
       description: "Electric",
-      amount_cents: 2_500,
+      amount_cents: -2_500,
       category: category,
       account: account,
       cleared: true
@@ -57,7 +57,7 @@ class BudgetMonthsTest < ActionDispatch::IntegrationTest
     assert_includes body, category.name
     assert_includes body, "Utilities"
     assert_includes body, "$100.00"
-    assert_includes body, "-$25.00"
+    assert_includes body, "$25.00"
     assert_includes body, "$75.00"
   end
 end

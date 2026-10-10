@@ -27,7 +27,7 @@ class TransactionsCsvImportTest < ActiveSupport::TestCase
     assert_equal 2, r2[:skipped]
   end
 
-  def test_import_tsv_amounts_are_positive_and_direction_sets_category
+  def test_import_tsv_preserves_signed_amounts_and_direction_sets_category
     tsv = +"Details\tPosting Date\tDescription\tAmount\tType\tBalance\n"
     tsv << "DSLIP\t02/06/2026\tONLINE DEPOSIT\t3200.00\tCHECK_DEPOSIT\t\n"
     tsv << "DEBIT\t02/06/2026\tPOS DEBIT COMCAST / XFINITY\t-122.41\tMISC_DEBIT\t\n"
@@ -46,7 +46,7 @@ class TransactionsCsvImportTest < ActiveSupport::TestCase
     assert_equal @income.name, income_tx.category.name
 
     expense_tx = txs.second
-    assert_equal 12_241, expense_tx.amount_cents
+    assert_equal(-12_241, expense_tx.amount_cents)
     assert_equal @uncat.name, expense_tx.category.name
   end
 
@@ -62,7 +62,7 @@ class TransactionsCsvImportTest < ActiveSupport::TestCase
     assert_equal 1, result[:imported]
 
     tx = @account.transactions.first
-    assert_equal 12_241, tx.amount_cents
+    assert_equal(-12_241, tx.amount_cents)
     assert_equal @utilities.id, tx.category_id
   end
 

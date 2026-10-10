@@ -32,7 +32,7 @@
     %div
       %label{ class: "block text-sm font-medium text-stone-700" } Amount (cents)
       %p{ class: "mt-1 text-xs text-stone-600" } 5000 = $50.00, 12000 = $120.00
-      = f.text_field :estimated_amount_cents, placeholder: "12000", class: "mt-2 w-full border border-stone-300 p-2 text-sm"
+      = f.text_field :estimated_amount_cents, placeholder: "12000 (positive magnitude)", class: "mt-2 w-full border border-stone-300 p-2 text-sm"
 
   %div{ class: "grid grid-cols-1 sm:grid-cols-3 gap-4 items-end" }
     %div
@@ -74,7 +74,7 @@
       %span{ class: "text-stone-600" } Examples: “monthly + 1” (every month), “weekly + 2” (every 2 weeks)
     %p
       %span{ class: "font-semibold" } Amount (cents):
-      5000 = $50.00, 12000 = $120.00.
+      enter a positive magnitude: 5000 = $50.00, 12000 = $120.00. Projections apply the expense direction.
     %p
       %span{ class: "font-semibold" } Start date:
       when to begin counting this in projections.
