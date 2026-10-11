@@ -1,6 +1,6 @@
 = form_with model: @category, data: { turbo: false }, local: true do |f|
   - if @category.errors.any?
-    %div{ class: "mb-4 border border-stone-200 p-3 text-sm" }
+    %div{ class: "ui-card ui-card-danger mb-4 text-sm", role: "alert" }
       %div{ class: "font-semibold mb-1" } Could not save:
       %ul{ class: "list-disc pl-5" }
         - @category.errors.full_messages.each do |msg|
@@ -26,5 +26,5 @@
           Archived
 
   %div{ class: "mt-6 flex gap-3 items-center" }
-    = f.submit f.object.persisted? ? "Save" : "Create", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
-    = link_to "Cancel", categories_path, class: "text-sm underline"
+    = f.submit f.object.persisted? ? "Save" : "Create", class: "ui-button-primary"
+    = link_to "Cancel", categories_path, class: "ui-button-secondary"

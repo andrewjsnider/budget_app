@@ -1,16 +1,16 @@
-%div{ class: "max-w-7xl mx-auto px-6 py-10 text-stone-900" }
-  %div{ class: "flex items-end justify-between gap-6" }
+%div{ class: "ui-page-wide" }
+  %div{ class: "ui-page-header" }
     %div
-      %h1{ class: "text-3xl font-semibold" } Budget Proposals
-      %p{ class: "mt-2 text-stone-700" } Review generated budgets before approving them.
-    = link_to "Back to Budget", budget_path, class: "text-sm underline hover:text-stone-600"
+      %h1{ class: "ui-title" } Budget Proposals
+      %p{ class: "ui-subtitle" } Review generated budgets before approving them.
+    = link_to "Back to Budget", budget_path, class: "ui-button-secondary"
 
   - if @proposals.empty?
-    %div{ class: "mt-8 border border-stone-200 p-6 text-stone-700" }
+    %div{ class: "ui-card mt-8 text-stone-700" }
       No budget proposals have been generated yet.
   - else
-    %div{ class: "mt-8 overflow-x-auto border border-stone-200" }
-      %table{ class: "w-full min-w-max text-sm" }
+    %div{ class: "ui-table-wrap mt-8" }
+      %table{ class: "ui-table min-w-max" }
         %thead
           %tr{ class: "border-b border-stone-200 bg-stone-50" }
             %th{ class: "p-3 text-left" } Month
@@ -26,17 +26,17 @@
           - @proposals.each do |proposal|
             - existing_budget = proposal.budget_month || @budget_months_by_month[proposal.month]
             %tr{ class: "border-t border-stone-200" }
-              %td{ class: "p-3 font-medium" }= proposal.month.strftime("%B %Y")
-              %td{ class: "p-3 text-stone-700" }= proposal.created_at.strftime("%b %-d, %Y %-I:%M %p")
-              %td{ class: "p-3" }= budget_proposal_status(proposal)
-              %td{ class: "p-3 text-right" }= number_to_currency(proposal.proposed_income_cents / 100.0)
-              %td{ class: "p-3 text-right" }= number_to_currency(proposal.proposed_expense_cents / 100.0)
-              %td{ class: "p-3 text-right" }= number_to_currency(proposal.proposed_savings_cents / 100.0)
-              %td{ class: "p-3 text-right font-medium" }= number_to_currency(proposal.total_assigned_cents / 100.0)
-              %td{ class: "p-3" }
+              %td{ class: "font-medium" }= proposal.month.strftime("%B %Y")
+              %td{ class: "ui-cell-date" }= proposal.created_at.strftime("%b %-d, %Y %-I:%M %p")
+              %td= budget_proposal_status_badge(proposal)
+              %td{ class: "ui-cell-number" }= number_to_currency(proposal.proposed_income_cents / 100.0)
+              %td{ class: "ui-cell-number" }= number_to_currency(proposal.proposed_expense_cents / 100.0)
+              %td{ class: "ui-cell-number ui-money-positive" }= number_to_currency(proposal.proposed_savings_cents / 100.0)
+              %td{ class: "ui-cell-number font-medium" }= number_to_currency(proposal.total_assigned_cents / 100.0)
+              %td
                 - if existing_budget
-                  = link_to "Yes — View", budget_month_path(month: existing_budget.month.strftime("%Y-%m")), class: "underline"
+                  = link_to "Yes — View", budget_month_path(month: existing_budget.month.strftime("%Y-%m")), class: "ui-link"
                 - else
                   %span{ class: "text-stone-600" } No
-              %td{ class: "p-3 text-right" }
-                = link_to "View", budget_proposal_path(proposal), class: "underline font-medium"
+              %td{ class: "ui-cell-action" }
+                = link_to "View", budget_proposal_path(proposal), class: "ui-button-secondary min-h-0 px-3 py-1.5"

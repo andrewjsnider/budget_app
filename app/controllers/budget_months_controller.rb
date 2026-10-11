@@ -28,6 +28,9 @@ class BudgetMonthsController < ApplicationController
       direction: params[:direction]
     )
     @rows = row_builder.rows
+    @spent_cents = @rows.sum(&:activity_cents)
+    @remaining_cents = @assigned_total_cents - @spent_cents
+    @planned_savings_cents = @budget_month.planned_savings_cents.to_i
     @budget_sort = row_builder.sort_key
     @budget_direction = row_builder.direction
   end

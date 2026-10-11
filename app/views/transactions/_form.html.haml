@@ -1,10 +1,21 @@
 - if flash[:alert].present?
-  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+  %div{ class: "ui-card ui-card-danger mb-4 text-sm", role: "alert" }= flash[:alert]
 
 = form_with model: transaction, data: { turbo: false }, local: true, class: "space-y-4" do |f|
-  = f.date_field :occurred_on, class: "w-full border border-stone-300 p-2 text-sm"
-  = f.text_field :description, placeholder: "Description", class: "w-full border border-stone-300 p-2 text-sm"
-  = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }
-  = f.collection_select :category_id, @categories, :id, :name, { prompt: "Category" }, { class: "w-full border border-stone-300 p-2 text-sm" }
-  = f.text_field :amount_cents, placeholder: "Signed cents: expense -1299, income 50000", class: "w-full border border-stone-300 p-2 text-sm"
-  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+  %div
+    = f.label :occurred_on, "Date", class: "ui-label"
+    = f.date_field :occurred_on, class: "mt-1 w-full"
+  %div
+    = f.label :description, class: "ui-label"
+    = f.text_field :description, placeholder: "Merchant or description", class: "mt-1 w-full"
+  %div
+    = f.label :account_id, "Account", class: "ui-label"
+    = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Choose an account" }, { class: "mt-1 w-full" }
+  %div
+    = f.label :category_id, "Category", class: "ui-label"
+    = f.collection_select :category_id, @categories, :id, :name, { prompt: "Choose a category" }, { class: "mt-1 w-full" }
+  %div
+    = f.label :amount_cents, "Amount in cents", class: "ui-label"
+    = f.text_field :amount_cents, placeholder: "Expense -1299, income 50000", class: "mt-1 w-full", inputmode: "numeric"
+    %p{ class: "ui-help" } Use a negative amount for spending and a positive amount for income.
+  = f.submit class: "ui-button-primary"

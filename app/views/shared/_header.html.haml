@@ -1,4 +1,4 @@
-%header{ class: "border-b border-stone-200" }
+%header{ class: "border-b border-stone-200 bg-white shadow-sm" }
   :ruby
     base_month =
       if defined?(@month) && @month.present?
@@ -14,25 +14,24 @@
     prev_month = base_month.prev_month.strftime("%Y-%m")
     next_month = base_month.next_month.strftime("%Y-%m")
 
-  %div{ class: "max-w-5xl mx-auto px-6 py-4 flex items-center justify-between text-stone-900" }
-    %div{ class: "flex items-center gap-6" }
-      %span{ class: "text-lg font-semibold leading-none" }= link_to "Budget", root_path, class: "hover:text-stone-600"
+  %div{ class: "mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-stone-900 sm:px-6" }
+    %div{ class: "flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3" }
+      %span{ class: "text-lg font-semibold leading-none tracking-tight" }= link_to "Budget", root_path, class: "no-underline hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
 
-      %div{ class: "flex items-center gap-2" }
-        %span{ class: "text-sm text-stone-600 leading-none" }= month_label
-        %span{ class: "text-stone-400 text-sm" } ·
-        = link_to "Prev", budget_month_path(month: prev_month), class: "text-sm underline text-stone-600 hover:text-stone-900"
-        %span{ class: "text-stone-400 text-sm" }= ' | '
-        = link_to "Current", budget_month_path(month: Date.current.strftime("%Y-%m")), class: "text-sm underline text-stone-600 hover:text-stone-900"
-        %span{ class: "text-stone-400 text-sm" }= ' | '
-        = link_to "Next", budget_month_path(month: next_month), class: "text-sm underline text-stone-600 hover:text-stone-900"
+      %div{ class: "flex items-stretch border border-stone-300 bg-stone-50" }
+        = link_to "‹ Prev", budget_month_path(month: prev_month), class: "px-2.5 py-1.5 text-xs font-medium text-stone-600 no-underline hover:bg-white hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+        = link_to "Current", budget_month_path(month: Date.current.strftime("%Y-%m")), class: "border-x border-stone-300 px-2.5 py-1.5 text-xs font-medium text-stone-600 no-underline hover:bg-white hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+        = link_to "Next ›", budget_month_path(month: next_month), class: "px-2.5 py-1.5 text-xs font-medium text-stone-600 no-underline hover:bg-white hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+      %span{ class: "ui-badge ui-badge-neutral whitespace-nowrap" }= month_label
 
-      %nav{ class: "flex items-center gap-4" }
-        = link_to "Proposals", budget_proposals_path, class: "text-sm leading-none underline hover:text-stone-600"
-        = link_to "Accounts", accounts_path, class: "text-sm leading-none underline hover:text-stone-600"
-        = link_to "Transactions", transactions_path(month: this_month), class: "text-sm leading-none underline hover:text-stone-600"
-        = link_to "Recurring", recurring_expenses_path, class: "text-sm leading-none underline hover:text-stone-600"
-        = link_to "Income", income_sources_path, class: "text-sm leading-none underline hover:text-stone-600"
+      %nav{ class: "flex flex-wrap items-center gap-x-1", aria: { label: "Primary navigation" } }
+        = navigation_link "Budget", budget_month_path(month: this_month), active: controller_name == "budget_months"
+        = navigation_link "Proposals", budget_proposals_path, active: controller_name == "budget_proposals"
+        = navigation_link "Accounts", accounts_path, active: controller_name.in?(%w[accounts reconciliations])
+        = navigation_link "Transactions", transactions_path(month: this_month), active: controller_name.in?(%w[transactions transactions_imports])
+        = navigation_link "Recurring", recurring_expenses_path, active: controller_name == "recurring_expenses"
+        = navigation_link "Income", income_sources_path, active: controller_name.in?(%w[income_sources income_estimates])
+        = navigation_link "Utilities", reports_utilities_path, active: controller_path == "reports/utilities"
 
-    %div{ class: "flex items-center gap-4 mt-1" }
-      = button_to "Sign out", session_path, method: :delete, form: { class: "inline-flex items-center" }, class: "text-sm leading-none underline bg-transparent border-none p-0 hover:text-stone-600 hover:cursor-pointer"
+    %div{ class: "flex items-center" }
+      = button_to "Sign out", session_path, method: :delete, form: { class: "inline-flex items-center" }, class: "ui-link border-none bg-transparent p-1 text-sm hover:cursor-pointer"

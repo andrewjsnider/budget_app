@@ -1,40 +1,52 @@
-%div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
-  %div{ class: "flex items-end justify-between gap-6" }
+%div{ class: "ui-page" }
+  %div{ class: "ui-page-header" }
     %div
-      %h1{ class: "text-3xl font-semibold" } Budget
-      %p{ class: "mt-2 text-stone-700" }= @month.strftime("%B %Y")
-      = link_to "Budget Proposals", budget_proposals_path, class: "mt-2 inline-block text-sm underline hover:text-stone-600"
+      %h1{ class: "ui-title" } Budget
+      %p{ class: "ui-subtitle" }= @month.strftime("%B %Y")
+      = link_to "Budget Proposals", budget_proposals_path, class: "ui-link mt-2 inline-block text-sm"
 
-    = form_with url: budget_path, method: :get, class: "flex items-end gap-3" do |f|
+    = form_with url: budget_path, method: :get, class: "flex items-end gap-2 border border-stone-200 bg-white p-3 shadow-sm" do |f|
       - if @budget_sort.present?
         = hidden_field_tag :sort, @budget_sort
         = hidden_field_tag :direction, @budget_direction
       %div
-        %label{ class: "block text-sm text-stone-700" } Month
+        %label{ class: "ui-label", for: "month" } Month
         = month_field_tag :month,
           @month.strftime("%Y-%m"),
-          class: "border border-stone-300 p-2 text-sm"
+          class: "mt-1"
       = f.submit "Go",
-        class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+        class: "ui-button-secondary"
 
-  %div{ class: "mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4" }
-    %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-700" } Income this month
-      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@income_cents / 100.0)
+  %section{ class: "mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5", aria: { label: "Budget summary" } }
+    %div{ class: "ui-card ui-card-positive" }
+      %div{ class: "ui-summary-label" } Income
+      %div{ class: "ui-summary-value text-emerald-800" }= number_to_currency(@income_cents / 100.0)
 
-    %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-700" } Assigned
-      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@assigned_total_cents / 100.0)
+    %div{ class: "ui-card" }
+      %div{ class: "ui-summary-label" } Budgeted
+      %div{ class: "ui-summary-value" }= number_to_currency(@assigned_total_cents / 100.0)
 
-    %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-700" } To Assign
-      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@to_assign_cents / 100.0)
+    %div{ class: "ui-card" }
+      %div{ class: "ui-summary-label" } Spent
+      %div{ class: "ui-summary-value" }= number_to_currency(@spent_cents / 100.0)
 
-  %div{ class: "mt-6 mb-3 border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700" }
+    %div{ class: "ui-card #{'ui-card-danger' if @remaining_cents.negative?}" }
+      %div{ class: "ui-summary-label" } Remaining
+      %div{ class: "ui-summary-value #{'text-red-700' if @remaining_cents.negative?}" }= number_to_currency(@remaining_cents / 100.0)
+
+    %div{ class: "ui-card ui-card-positive" }
+      %div{ class: "ui-summary-label" } Planned savings
+      %div{ class: "ui-summary-value text-emerald-800" }= number_to_currency(@planned_savings_cents / 100.0)
+
+  %div{ class: "mt-3 flex justify-end text-sm" }
+    %span{ class: "text-stone-600" } Available to budget:
+    %strong{ class: "ml-2 tabular-nums #{'text-red-700' if @to_assign_cents.negative?}" }= number_to_currency(@to_assign_cents / 100.0)
+
+  %div{ class: "mt-6 border border-stone-200 bg-stone-100/70 p-3 text-sm text-stone-700" }
     %p
       %strong How this works:
       You only edit the
-      %strong Assigned
+      %strong Budgeted
       column.
     %p{ class: "mt-1 text-stone-600" }
       Example:
@@ -43,44 +55,48 @@
       to Groceries.
       If you spend
       %strong $120,
-      Available becomes
+      Remaining becomes
       %strong $180.
 
-  = form_with url: budget_month_path(month: @month.strftime("%Y-%m"), sort: @budget_sort, direction: @budget_direction), method: :patch, class: "mt-10", data: { turbo: false} do
+  = form_with url: budget_month_path(month: @month.strftime("%Y-%m"), sort: @budget_sort, direction: @budget_direction), method: :patch, class: "mt-8", data: { turbo: false} do
     %div{ class: "flex items-center justify-between" }
       %h2{ class: "text-lg font-semibold" } Categories
-      = submit_tag "Save", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+      = submit_tag "Save", class: "ui-button-primary"
 
-    %div{ class: "mt-3 border border-stone-200" }
-      %table{ class: "w-full text-sm" }
+    %div{ class: "ui-table-wrap mt-3" }
+      %table{ class: "ui-table" }
         %thead
           %tr{ class: "border-b border-stone-200" }
-            %th{ class: "p-3 text-left", aria: { sort: sortable_header_aria_sort(key: "category", current_sort: @budget_sort, current_direction: @budget_direction) } }
+            %th{ class: "text-left", aria: { sort: sortable_header_aria_sort(key: "category", current_sort: @budget_sort, current_direction: @budget_direction) } }
               = sortable_header_link "Category", key: "category", default_direction: "asc", current_sort: @budget_sort, current_direction: @budget_direction
-            %th{ class: "p-3 text-left", aria: { sort: sortable_header_aria_sort(key: "group", current_sort: @budget_sort, current_direction: @budget_direction) } }
+            %th{ class: "text-left", aria: { sort: sortable_header_aria_sort(key: "group", current_sort: @budget_sort, current_direction: @budget_direction) } }
               = sortable_header_link "Group", key: "group", default_direction: "asc", current_sort: @budget_sort, current_direction: @budget_direction
-            %th{ class: "p-3 text-right", aria: { sort: sortable_header_aria_sort(key: "assigned", current_sort: @budget_sort, current_direction: @budget_direction) } }
-              = sortable_header_link "Assigned", key: "assigned", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
-            %th{ class: "p-3 text-right", aria: { sort: sortable_header_aria_sort(key: "activity", current_sort: @budget_sort, current_direction: @budget_direction) } }
-              = sortable_header_link "Activity", key: "activity", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
-            %th{ class: "p-3 text-right", aria: { sort: sortable_header_aria_sort(key: "available", current_sort: @budget_sort, current_direction: @budget_direction) } }
-              = sortable_header_link "Available", key: "available", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "text-right", aria: { sort: sortable_header_aria_sort(key: "assigned", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Budgeted", key: "assigned", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "text-right", aria: { sort: sortable_header_aria_sort(key: "activity", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Spent", key: "activity", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
+            %th{ class: "text-right", aria: { sort: sortable_header_aria_sort(key: "available", current_sort: @budget_sort, current_direction: @budget_direction) } }
+              = sortable_header_link "Remaining", key: "available", default_direction: "desc", current_sort: @budget_sort, current_direction: @budget_direction
         %tbody
           - @rows.each do |row|
             - cat = row.category
-            %tr{ class: "border-t border-stone-200" }
-              %td{ class: "p-3" }
-                = link_to cat.name, transactions_path(month: @month.strftime("%Y-%m"), category_id: cat.id), class: "underline"
-              %td{ class: "p-3 text-stone-700" }= cat.group.presence || "misc"
+            - inactive = row.assigned_cents.zero? && row.activity_cents.zero?
+            - over_budget = row.available_cents.negative?
+            - progress = row.assigned_cents.positive? ? [[(row.activity_cents.to_f / row.assigned_cents * 100).round, 0].max, 100].min : (row.activity_cents.positive? ? 100 : 0)
+            %tr{ class: "#{'!bg-red-50/70' if over_budget} #{'text-stone-500' if inactive}" }
+              %td
+                = link_to cat.name, transactions_path(month: @month.strftime("%Y-%m"), category_id: cat.id), class: "ui-link #{'font-normal' if inactive}"
+                %div{ class: "mt-2 h-1 w-28 overflow-hidden bg-stone-200", role: "progressbar", aria: { label: "#{cat.name} spending", valuenow: progress, valuemin: 0, valuemax: 100 } }
+                  %div{ class: "h-full #{over_budget ? 'bg-red-500' : 'bg-emerald-600'}", style: "width: #{progress}%" }
+              %td{ class: "text-stone-600" }= cat.group.presence || "misc"
 
-              %td{ class: "p-3 text-right" }
-                = text_field_tag "assigned[#{cat.id}]", (row.assigned_cents / 100.0), inputmode: "decimal", class: "w-28 border border-stone-300 p-2 text-sm text-right"
+              %td{ class: "ui-cell-number" }
+                = text_field_tag "assigned[#{cat.id}]", (row.assigned_cents / 100.0), inputmode: "decimal", aria: { label: "Budgeted amount for #{cat.name}" }, class: "w-28 text-right tabular-nums"
 
-
-              %td{ class: "p-3 text-right text-stone-700" }
-                - activity_class = row.activity_cents < 0 ? "text-red-600" : "text-stone-700"
+              %td{ class: "ui-cell-number text-stone-700" }
+                - activity_class = row.activity_cents.negative? ? "text-emerald-700" : "text-stone-700"
                 %span{ class: activity_class }= number_to_currency(row.activity_cents / 100.0)
 
               - available_class = row.available_cents < 0 ? "text-red-700" : "text-green-700"
-              %td{ class: "p-3 text-right font-semibold #{available_class}" }
+              %td{ class: "ui-cell-number font-semibold #{available_class}" }
                 = number_to_currency(row.available_cents / 100.0)

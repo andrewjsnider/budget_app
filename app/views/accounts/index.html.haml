@@ -1,12 +1,12 @@
-%div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
-  %div{ class: "flex items-end justify-between gap-6" }
+%div{ class: "ui-page" }
+  %div{ class: "ui-page-header" }
     %div
-      %h1{ class: "text-3xl font-semibold" } Accounts
-      %p{ class: "mt-2 text-stone-700" } Active accounts only.
-    = link_to "New account", new_account_path, class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+      %h1{ class: "ui-title" } Accounts
+      %p{ class: "ui-subtitle" } Active accounts only.
+    = link_to "New account", new_account_path, class: "ui-button-primary"
 
-  %div{ class: "mt-6 border border-stone-200" }
-    %table{ class: "w-full text-sm" }
+  %div{ class: "ui-table-wrap mt-6" }
+    %table{ class: "ui-table" }
       %thead
         %tr{ class: "border-b border-stone-200" }
           %th{ class: "p-3 text-left" } Name
@@ -16,8 +16,8 @@
       %tbody
         - @accounts.each do |account|
           %tr{ class: "border-t border-stone-200" }
-            %td{ class: "p-3" }= link_to account.name, account_path(account), class: "underline"
-            %td{ class: "p-3 text-stone-700" }= account.kind
-            %td{ class: "p-3 font-mono text-stone-700" }= account.import_key.presence || "Not set"
-            %td{ class: "p-3 text-right flex gap-2 justify-end" }
-              = link_to 'Edit', edit_account_path(account), class: 'text-sm underline'
+            %td{ class: "font-medium" }= link_to account.name, account_path(account), class: "ui-link"
+            %td= status_badge(account.kind.to_s.humanize, tone: :neutral)
+            %td{ class: "font-mono text-xs text-stone-600" }= account.import_key.presence || "Not set"
+            %td{ class: "ui-cell-action" }
+              = link_to 'Edit', edit_account_path(account), class: 'ui-link text-sm'

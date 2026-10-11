@@ -20,7 +20,7 @@ class TransactionsController < ApplicationController
       params: @filter_values,
       default_date_range: @month..@month.end_of_month
     )
-    @transactions = search.call.includes(:category, :account)
+    @transactions = search.call.includes(:category, :account, :transaction_classification)
     @transaction_sort = search.sort_key
     @transaction_direction = search.direction
     @filters_active = FILTER_KEYS.any? { |key| @filter_values[key].present? }

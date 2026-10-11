@@ -1,24 +1,24 @@
 = form_with model: @account, data: { turbo: false }, local: true do |f|
   %div{ class: "space-y-4" }
     %div
-      %label{ class: "block text-sm text-stone-700" } Name
-      = f.text_field :name, class: "w-full border border-stone-300 p-2"
+      = f.label :name, class: "ui-label"
+      = f.text_field :name, class: "mt-1 w-full"
 
     %div
-      %label{ class: "block text-sm text-stone-700" } Kind
+      = f.label :kind, class: "ui-label"
       = f.select :kind,
         [["Checking", "checking"], ["Savings", "savings"], ["Credit Card", "credit"], ["Cash", "cash"]],
         {},
-        class: "w-full border border-stone-300 p-2"
+        class: "mt-1 w-full"
 
     %div
-      %label{ class: "block text-sm text-stone-700" } Statement import key
+      = f.label :import_key, "Statement import key", class: "ui-label"
       = f.text_field :import_key,
         placeholder: "primary-checking",
         autocapitalize: "none",
         autocomplete: "off",
-        class: "w-full border border-stone-300 p-2 font-mono"
-      %p{ class: "mt-1 text-xs text-stone-600" }
+        class: "mt-1 w-full font-mono"
+      %p{ class: "ui-help" }
         Required for active accounts. Use lowercase letters, numbers, and hyphens. It cannot be changed after a statement is staged.
 
     - if f.object.persisted?
@@ -29,5 +29,5 @@
 
   %div{ class: "mt-6 flex gap-3 items-center" }
     = f.submit f.object.persisted? ? "Save" : "Create",
-      class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
-    = link_to "Cancel", accounts_path, class: "text-sm underline"
+      class: "ui-button-primary"
+    = link_to "Cancel", accounts_path, class: "ui-button-secondary"

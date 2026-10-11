@@ -12,7 +12,12 @@ class BudgetMonthsTest < ActionDispatch::IntegrationTest
 
     get budget_month_path(month: Date.current.strftime("%Y-%m"))
     assert_response :success
-    assert_includes response.body, "To Assign"
+    assert_select "section[aria-label='Budget summary']" do
+      assert_includes response.body, "Budgeted"
+      assert_includes response.body, "Spent"
+      assert_includes response.body, "Remaining"
+      assert_includes response.body, "Planned savings"
+    end
     assert_includes response.body, "Electric"
   end
 
@@ -97,7 +102,7 @@ class BudgetMonthsTest < ActionDispatch::IntegrationTest
     get budget_month_path(month: "2026-02", sort: "assigned", direction: "desc")
 
     assert_response :success
-    assert_select "th[aria-sort='descending'] a", text: /Assigned/ do |links|
+    assert_select "th[aria-sort='descending'] a", text: /Budgeted/ do |links|
       assert_includes links.first["href"], "sort=assigned"
       assert_includes links.first["href"], "direction=asc"
     end

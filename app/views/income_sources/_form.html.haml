@@ -1,14 +1,22 @@
 - if flash[:alert].present?
-  %div{ class: "mb-4 border border-stone-300 p-3 text-sm" }= flash[:alert]
+  %div{ class: "ui-card ui-card-danger mb-4 text-sm", role: "alert" }= flash[:alert]
 
 = form_with model: income_source, data: { turbo: false }, class: "space-y-4" do |f|
-  = f.text_field :name, placeholder: "Name (Job A, Side Biz)", class: "w-full border border-stone-300 p-2 text-sm"
-  = f.text_field :kind, placeholder: "Kind (w2, 1099, biz)", class: "w-full border border-stone-300 p-2 text-sm"
-  = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Account" }, { class: "w-full border border-stone-300 p-2 text-sm" }
-  = f.collection_select :category_id, @income_categories, :id, :name, { prompt: "Income category" }, { class: "w-full border border-stone-300 p-2 text-sm" }
+  %div
+    = f.label :name, class: "ui-label"
+    = f.text_field :name, placeholder: "Job A or Side business", class: "mt-1 w-full"
+  %div
+    = f.label :kind, class: "ui-label"
+    = f.text_field :kind, placeholder: "W-2, 1099, business", class: "mt-1 w-full"
+  %div
+    = f.label :account_id, "Account", class: "ui-label"
+    = f.collection_select :account_id, @accounts, :id, :name, { prompt: "Choose an account" }, { class: "mt-1 w-full" }
+  %div
+    = f.label :category_id, "Income category", class: "ui-label"
+    = f.collection_select :category_id, @income_categories, :id, :name, { prompt: "Choose an income category" }, { class: "mt-1 w-full" }
 
   %label{ class: "inline-flex items-center gap-2 text-sm text-stone-700" }
     = f.check_box :active
     Active
 
-  = f.submit class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
+  = f.submit class: "ui-button-primary"

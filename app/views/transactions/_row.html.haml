@@ -1,13 +1,23 @@
 -# locals: t:, categories:, flash_updated: (optional)
 - flash_updated = (local_assigns[:flash_updated] == true)
 - row_data = flash_updated ? { controller: "flash-row" } : nil
+- transfer = t.transaction_classification&.kind.in?(TransactionClassification::TRANSFER_KINDS)
+- uncategorized = t.category&.name == "Uncategorized"
+- row_class = uncategorized ? "!bg-amber-50/70" : nil
+- amount_class = transfer ? "ui-money-neutral" : (t.amount_cents.positive? ? "ui-money-positive" : "ui-money-negative")
 
-%tr{ id: dom_id(t), class: "border-t border-stone-200", data: row_data }
-  %td{ class: "p-3" }= t.occurred_on
-  %td{ class: "p-3" }= t.description
-  %td{ class: "p-3" }= t.account&.name
+%tr{ id: dom_id(t), class: row_class, data: row_data }
+  %td{ class: "ui-cell-date" }
+    = t.occurred_on
+    - if t.reconciliation_id.present? || t.reconciled_at.present?
+      %div{ class: "mt-1" }= status_badge("Reconciled", tone: :positive)
+  %td
+    %div{ class: "font-medium text-stone-950" }= t.description.presence || "No description"
+    - if transfer
+      %div{ class: "mt-1" }= status_badge("Transfer", tone: :neutral)
+  %td{ class: "text-stone-600" }= t.account&.name
 
-  %td{ class: "p-3" }
+  %td
     = form_with model: t,
       url: transaction_path(t),
       method: :patch,
@@ -15,8 +25,10 @@
       = f.select :category_id,
         options_from_collection_for_select(categories, :id, :name, t.category_id),
         {},
-        class: "border border-stone-300 p-2 text-sm w-full",
+        class: "w-full",
         data: { action: "change->autosubmit#submit" }
+    - if uncategorized
+      %div{ class: "mt-1" }= status_badge("Needs category", tone: :warning)
 
-  %td{ class: "p-3 text-right" }= number_to_currency(t.amount_cents.to_i / 100.0)
-  %td{ class: "p-3 text-right" }= link_to "Edit", edit_transaction_path(t), class: "text-sm underline"
+  %td{ class: "ui-cell-number #{amount_class}" }= number_to_currency(t.amount_cents.to_i / 100.0)
+  %td{ class: "ui-cell-action" }= link_to "Edit", edit_transaction_path(t), class: "ui-link text-sm"

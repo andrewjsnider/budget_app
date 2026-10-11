@@ -13,6 +13,8 @@ class TransactionsTest < ActionDispatch::IntegrationTest
     get transactions_path(month: "2026-02")
     assert_response :success
     assert_includes response.body, "Transactions"
+    assert_select "table.ui-table"
+    assert_select "nav a[aria-current='page']", text: "Transactions"
   end
 
   def test_create_transaction

@@ -50,8 +50,8 @@
       %span{ class: "text-sm text-stone-700" } Active
 
   %div{ class: "pt-2 flex gap-3 flex-wrap items-center" }
-    = f.submit "Save recurring expense", class: "border border-stone-900 px-4 py-2 text-sm hover:bg-stone-900 hover:text-white"
-    = link_to "Cancel", recurring_expenses_path, class: "text-sm underline text-stone-700"
+    = f.submit "Save recurring expense", class: "ui-button-primary"
+    = link_to "Cancel", recurring_expenses_path, class: "ui-button-secondary"
 
 %div{ class: "my-6 border border-stone-200 p-4" }
   %h2{ class: "text-base font-semibold text-stone-900" } How to fill this out
