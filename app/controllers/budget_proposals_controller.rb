@@ -46,9 +46,9 @@ class BudgetProposalsController < ApplicationController
     @month = @proposal.month
     @validation = BudgetProposals::Validation.call(@proposal)
     @budget_month = @proposal.budget_month || BudgetMonth.find_by(month: @proposal.month)
-    @savings_recommendations = FinancialPlanning::SavingsRecommendations.call(@proposal)
-    @additional_potential_monthly_cents = @savings_recommendations.sum(&:potential_monthly_savings_cents)
-    @additional_potential_annual_cents = @savings_recommendations.sum(&:potential_annual_savings_cents)
+    @ai_savings_recommendations = @proposal.savings_recommendations
+    @additional_potential_monthly_cents = @proposal.estimated_additional_monthly_savings_cents
+    @additional_potential_annual_cents = @proposal.estimated_additional_annual_savings_cents
     if @budget_month && !@proposal.applied?
       @budget_comparison = BudgetProposals::Comparison.call(@proposal, @budget_month)
     end

@@ -72,6 +72,52 @@ class BudgetProposal < ApplicationRecord
     proposed_income_cents - total_assigned_cents
   end
 
+  def savings_recommendations
+    rows = ai_savings_recommendations
+    rows.is_a?(Array) ? rows.select { |row| row.is_a?(Hash) } : []
+  end
+
+  def estimated_additional_monthly_savings_cents
+    savings_recommendations.sum { |row| row.fetch("estimated_monthly_savings_cents", 0).to_i }
+  end
+
+  def estimated_additional_annual_savings_cents
+    savings_recommendations.sum { |row| row.fetch("estimated_annual_savings_cents", 0).to_i }
+  end
+
+  def agent_financial_context
+    validation = BudgetProposals::Validation.call(self)
+
+    {
+      proposal_id: id,
+      month: month.iso8601,
+      status: status,
+      review_status: applied? ? "applied" : (validation.valid? ? "ready" : "invalid"),
+      policy_version: policy_version,
+      income: {
+        planning_baseline: proposal["planning_baseline"],
+        available_paycheck_income_cents: proposed_income_cents,
+        monthly_paycheck_totals_cents: proposal.fetch("recurring_outside_income_monthly_totals_cents", {}),
+        paycheck_averages_cents: proposal.fetch("recurring_outside_income_averages_cents", {}),
+        total_income_previous_month_cents: proposal["total_outside_income_previous_month_cents"]
+      },
+      proposed_income_cents: proposed_income_cents,
+      proposed_expense_cents: proposed_expense_cents,
+      proposed_savings_cents: proposed_savings_cents,
+      planned_savings_allocations: planned_savings_allocations,
+      savings_rate_percentage: savings_rate_percentage.round(2),
+      amount_remaining_cents: amount_remaining_cents,
+      proposed_categories: proposed_categories,
+      recurring_obligations: proposal.fetch("recurring_obligation_details", []),
+      subscriptions: proposal.fetch("subscriptions", []),
+      merchant_concentration: proposal.fetch("merchant_concentration", []),
+      excluded_category_spending_cents: proposal.fetch("excluded_category_spending_cents", {}),
+      unresolved_transactions: proposal.fetch("unresolved_transactions", {}),
+      validation_errors: validation.errors,
+      validation_warnings: validation.warnings
+    }
+  end
+
   private
 
   def default_savings_allocation

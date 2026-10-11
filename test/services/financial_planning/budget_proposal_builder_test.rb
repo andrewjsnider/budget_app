@@ -41,6 +41,7 @@ class FinancialPlanning::BudgetProposalBuilderTest < ActiveSupport::TestCase
     assert_equal 6, proposal[:recurring_outside_income_monthly_totals_cents].length
     assert_equal 400_000, proposal[:recurring_outside_income_monthly_totals_cents].fetch(history_month.iso8601)
     assert_equal 30_000, proposal[:historical_category_spending_cents].fetch("3").fetch(expense.id.to_s)
+    assert proposal[:merchant_concentration].any? { |row| row.fetch(:category_name) == "Living" }
     assert_equal proposal[:proposed_savings_cents], proposal[:planned_savings_allocations].sum { |row| row.fetch(:proposed_cents) }
     assert_equal TransactionClassification::TRANSFER_KINDS, proposal.dig(:exclusions, :transfer_kinds)
   end
@@ -54,7 +55,43 @@ class FinancialPlanning::BudgetProposalBuilderTest < ActiveSupport::TestCase
     assert_equal "draft", first[:status]
     assert_equal first[:proposal_id], second[:proposal_id]
     assert_equal 1, BudgetProposal.where(month: month).count
+    persisted = BudgetProposal.find(first.fetch(:proposal_id))
+    assert_empty persisted.savings_recommendations
     assert_nil BudgetMonth.find_by(month: month)
+  end
+
+
+  test "stores recurring, subscription, trend, and merchant facts without fabricating recommendations" do
+    month = Date.new(2026, 11, 1)
+    account = create(:account)
+    dining = create(:category, name: "Restaurants", kind: "expense")
+    streaming = create(:category, name: "Streaming", kind: "expense")
+    create(
+      :recurring_expense,
+      name: "Movie Stream",
+      account: account,
+      category: streaming,
+      expense_type: "subscription",
+      cadence: "monthly",
+      interval: 1,
+      day_of_month: 1,
+      estimated_amount_cents: 1_500,
+      start_on: Date.new(2026, 1, 1),
+      active: true
+    )
+    create(:transaction, account:, category: dining, occurred_on: month.prev_month, description: "Local Cafe", amount_cents: -12_000)
+    create(:transaction, account:, category: dining, occurred_on: month.prev_month(4), description: "Local Cafe", amount_cents: -6_000)
+
+    result = FinancialPlanning::BudgetProposalBuilder.call(month:, dry_run: false)
+    proposal = BudgetProposal.find(result.fetch(:proposal_id))
+    dining_row = proposal.proposed_categories.find { |row| row.fetch("category_id") == dining.id }
+    context = proposal.agent_financial_context
+
+    assert_equal 1_500, context.fetch(:subscriptions).sole.fetch("projected_monthly_cents")
+    assert_equal 4_000, dining_row.dig("trend_data", "current_three_month_average_cents")
+    assert_equal 2_000, dining_row.dig("trend_data", "prior_three_month_average_cents")
+    assert_equal "Local Cafe", context.fetch(:merchant_concentration).find { |row| row.fetch("category_id") == dining.id }.fetch("merchant")
+    assert_empty proposal.savings_recommendations
   end
 
   test "excludes non-budget categories from history and proposed categories" do

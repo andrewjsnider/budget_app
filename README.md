@@ -173,6 +173,40 @@ bin/rails budget:propose_budget MONTH=2026-11 DRY_RUN=1 JSON=1
 bin/rails budget:propose_budget MONTH=2026-11 JSON=1
 ```
 
+Read the deterministic proposal context used for agent review:
+
+```sh
+bin/rails budget:proposal_context PROPOSAL_ID=123
+```
+
+Store evidence-backed AI savings suggestions separately from the deterministic proposal totals:
+
+```json
+{
+  "proposal_id": 123,
+  "recommendations": [
+    {
+      "title": "Review restaurant frequency",
+      "category_or_merchant": "Restaurants",
+      "explanation": "Restaurant spending is concentrated in repeated discretionary purchases.",
+      "current_spending_cents": 42000,
+      "suggested_target_cents": 32000,
+      "estimated_monthly_savings_cents": 10000,
+      "estimated_annual_savings_cents": 120000,
+      "confidence": "medium",
+      "supporting_evidence": ["Six-month restaurant average is $420", "Three merchants account for 72% of restaurant spending"]
+    }
+  ]
+}
+```
+
+```sh
+bin/rails budget:store_savings_recommendations INPUT=private/actions/proposal_savings.json DRY_RUN=1 JSON=1
+bin/rails budget:store_savings_recommendations INPUT=private/actions/proposal_savings.json JSON=1
+```
+
+Rails does not generate these suggestions from spending trends. It only validates and stores the agent-authored recommendation snapshot. Storing suggestions does not change proposal assignments, proposal totals, or approval state.
+
 Transfer classifications leave ledger transactions intact but exclude them from budget income and expense analytics. Expense-category refunds remain included as positive offsets to spending. Reimbursements and windfalls remain explicitly distinguishable, and windfalls are excluded from the recurring-income history used alongside scheduled recurring income.
 
 This README would normally document whatever steps are necessary to get the

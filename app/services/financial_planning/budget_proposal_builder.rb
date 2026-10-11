@@ -47,7 +47,8 @@ module FinancialPlanning
 
     def build_payload
       recurring_income = recurring_income_cents
-      obligations = recurring_obligations
+      obligation_details = recurring_obligation_details
+      obligations = recurring_obligations(obligation_details)
       category_rows = proposed_categories(obligations)
       proposed_expenses = category_rows.sum { |row| row.fetch(:proposed_cents) }
       buffer = (recurring_income * BUFFER_BASIS_POINTS / 10_000.0).round
@@ -63,6 +64,9 @@ module FinancialPlanning
         recurring_outside_income_averages_cents: HISTORY_WINDOWS.to_h { |months| [ months.to_s, average_recurring_outside_income(months) ] },
         historical_category_spending_cents: historical_category_spending,
         recurring_obligations_cents: obligations,
+        recurring_obligation_details: obligation_details,
+        subscriptions: obligation_details.select { |row| row.fetch(:expense_type) == "subscription" },
+        merchant_concentration: merchant_concentration,
         proposed_categories: category_rows,
         proposed_expense_total_cents: proposed_expenses,
         buffer_cents: buffer,
@@ -88,13 +92,32 @@ module FinancialPlanning
         end
     end
 
-    def recurring_obligations
+    def recurring_obligations(details)
       totals = Hash.new(0)
-      RecurringExpense.where(active: [ true, nil ]).find_each do |expense|
-        count = Schedule.dates(expense, from: @month, to: @month.end_of_month).length
-        totals[expense.category_id] += count * expense.estimated_amount_cents
+      details.each do |row|
+        totals[row.fetch(:category_id)] += row.fetch(:projected_monthly_cents)
       end
       totals.sort.to_h.transform_keys(&:to_s)
+    end
+
+    def recurring_obligation_details
+      RecurringExpense.includes(:category).where(active: [ true, nil ]).order(:id).filter_map do |expense|
+        occurrence_count = Schedule.dates(expense, from: @month, to: @month.end_of_month).length
+        next if occurrence_count.zero?
+
+        {
+          recurring_expense_id: expense.id,
+          name: expense.name,
+          category_id: expense.category_id,
+          category_name: expense.category.name,
+          expense_type: expense.expense_type,
+          cadence: expense.cadence,
+          interval: expense.interval,
+          occurrence_count: occurrence_count,
+          amount_per_occurrence_cents: expense.estimated_amount_cents,
+          projected_monthly_cents: occurrence_count * expense.estimated_amount_cents
+        }
+      end
     end
 
     def total_outside_income_for(month)
@@ -144,11 +167,14 @@ module FinancialPlanning
     def proposed_categories(obligations)
       previous_items = BudgetMonth.find_by(month: @month.prev_month)&.budget_items&.index_by(&:category_id) || {}
       spending = historical_category_spending
+      prior_spending = prior_three_month_category_spending
       budget_categories.order(:id).filter_map do |category|
         history_values = HISTORY_WINDOWS.to_h { |months| [ months.to_s, spending.fetch(months.to_s, {}).fetch(category.id.to_s, 0) ] }
+        current_three_month_average = history_values.fetch("3")
+        prior_three_month_average = prior_spending.fetch(category.id.to_s, 0)
         recurring = obligations.fetch(category.id.to_s, 0)
         previous = previous_items[category.id]&.assigned_cents.to_i
-        proposed = [ previous, history_values.fetch("3"), recurring ].max
+        proposed = [ previous, current_three_month_average, recurring ].max
         next if proposed.zero?
 
         {
@@ -157,11 +183,72 @@ module FinancialPlanning
           category_group: category.group,
           previous_budget_cents: previous,
           average_spending_cents: history_values,
+          trend_data: {
+            current_three_month_average_cents: current_three_month_average,
+            prior_three_month_average_cents: prior_three_month_average,
+            change_cents: current_three_month_average - prior_three_month_average,
+            change_percentage: percentage_change(current_three_month_average, prior_three_month_average)
+          },
           recurring_obligation_cents: recurring,
           proposed_cents: proposed,
           rationale: "max(previous_budget, three_month_average, recurring_obligation)"
         }
       end
+    end
+
+    def prior_three_month_category_spending
+      start_on = @month.prev_month(6)
+      end_on = @month.prev_month(3) - 1.day
+      sums = budget_transactions.joins(:category)
+        .where(occurred_on: start_on..end_on, categories: { kind: "expense" })
+        .group(:category_id)
+        .sum(:amount_cents)
+
+      sums.to_h do |category_id, signed_cents|
+        [ category_id.to_s, [ (-signed_cents.to_f / 3).round, 0 ].max ]
+      end.sort.to_h
+    end
+
+    def percentage_change(current, previous)
+      return nil unless previous.positive?
+
+      ((current - previous).fdiv(previous) * 100).round(1)
+    end
+
+    def merchant_concentration
+      start_on = @month.prev_month(6)
+      end_on = @month - 1.day
+      scope = budget_transactions.joins(:category)
+        .where(occurred_on: start_on..end_on, categories: { kind: "expense" })
+      signed_totals = scope.group(:category_id, :description).sum(:amount_cents)
+      transaction_counts = scope.group(:category_id, :description).count
+      categories = Category.where(id: signed_totals.keys.map(&:first)).index_by(&:id)
+
+      rows = signed_totals.filter_map do |(category_id, description), signed_cents|
+        spending = [ -signed_cents, 0 ].max
+        next if spending.zero?
+
+        {
+          category_id: category_id,
+          category_name: categories.fetch(category_id).name,
+          merchant: description.presence || "No description",
+          six_month_spending_cents: spending,
+          monthly_average_cents: (spending / 6.0).round,
+          transaction_count: transaction_counts.fetch([ category_id, description ])
+        }
+      end
+
+      category_totals = rows.group_by { |row| row.fetch(:category_id) }
+        .transform_values { |category_rows| category_rows.sum { |row| row.fetch(:six_month_spending_cents) } }
+      rows.each do |row|
+        total = category_totals.fetch(row.fetch(:category_id))
+        row[:category_share_percentage] = (row.fetch(:six_month_spending_cents).fdiv(total) * 100).round(1)
+      end
+
+      rows.group_by { |row| row.fetch(:category_id) }
+        .values
+        .flat_map { |category_rows| category_rows.sort_by { |row| -row.fetch(:six_month_spending_cents) }.first(5) }
+        .sort_by { |row| [ row.fetch(:category_name), -row.fetch(:six_month_spending_cents) ] }
     end
 
     def planned_savings_allocations(savings_cents)

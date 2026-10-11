@@ -109,4 +109,33 @@ namespace :budget do
   rescue Date::Error, ActiveRecord::RecordInvalid => e
     abort e.message
   end
+
+  desc "Print deterministic financial context for one persisted budget proposal"
+  task proposal_context: :environment do
+    abort "PROPOSAL_ID is required" if ENV["PROPOSAL_ID"].blank?
+    proposal = BudgetProposal.find(ENV.fetch("PROPOSAL_ID"))
+    puts JSON.pretty_generate(proposal.agent_financial_context)
+  rescue ActiveRecord::RecordNotFound
+    abort "Budget proposal was not found"
+  end
+
+  desc "Store reviewed AI savings suggestions on a draft budget proposal"
+  task store_savings_recommendations: :environment do
+    abort "INPUT is required" if ENV["INPUT"].blank?
+    result = FinancialActions::StoreBudgetProposalSavingsRecommendations.call(
+      input: FinancialActions::InputFile.call(ENV.fetch("INPUT")),
+      dry_run: ENV["DRY_RUN"] == "1"
+    )
+    if ENV["JSON"] == "1"
+      puts JSON.pretty_generate(result)
+    else
+      puts "Proposal: #{result.fetch(:proposal_id)}"
+      puts "Status: #{result.fetch(:proposal_status)}"
+      puts "Recommendations: #{result.fetch(:recommendation_count)}"
+      puts "Persisted: #{!result.fetch(:dry_run)}"
+    end
+  rescue FinancialActions::InputFile::InvalidInput,
+         MonthlyProcessing::PathSafety::UnsafePath => e
+    abort e.message
+  end
 end

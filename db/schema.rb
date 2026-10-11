@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_11_130000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_11_141000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_11_130000) do
     t.datetime "applied_at"
     t.boolean "replaced_existing_budget", default: false, null: false
     t.datetime "replaced_at"
+    t.jsonb "ai_savings_recommendations", default: [], null: false
     t.index ["budget_month_id"], name: "index_budget_proposals_on_budget_month_id"
     t.index ["month", "input_digest"], name: "index_budget_proposals_on_month_and_input_digest", unique: true
     t.check_constraint "EXTRACT(day FROM month) = 1::numeric", name: "budget_proposals_month_first_day"

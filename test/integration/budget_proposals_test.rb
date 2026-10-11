@@ -36,7 +36,7 @@ class BudgetProposalsTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "Income"
     assert_select "h2", text: "Proposed Budget"
     assert_select "h2", text: "Savings"
-    assert_select "h3", text: "Ways to save more"
+    assert_select "h2", text: "AI savings suggestions"
     assert_includes response.body, "Six-month paycheck average"
     assert_includes response.body, "$1,000.00"
     assert_includes response.body, "$400.00"
@@ -45,17 +45,44 @@ class BudgetProposalsTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "$100.00"
     assert_select "#planned-savings-summary", text: /\$500\.00/
     assert_select "#savings-rate-summary", text: /50\.0%/
-    assert_select "#additional-savings-summary", text: /\$50\.00/
+    assert_select "#additional-savings-summary", text: /Not generated/
     assert_select "#savings", text: /Emergency Fund.*\$300\.00/m
     assert_select "#savings", text: /Vacation.*\$200\.00/m
     assert_select "#savings", text: /Total planned savings.*\$500\.00/m
-    assert_select "#savings", text: /\$50\.00 \/ month/
-    assert_select "#savings", text: /\$600\.00 \/ year/
+    assert_select "#ai-savings-suggestions", text: /No savings suggestions have been generated for this proposal yet\./
     assert_includes response.body, "Groceries"
     assert_includes response.body, "3-month spending average"
     assert_includes response.body, "Excluded Uncategorized spending"
     assert_select "form[action='#{approve_budget_proposal_path(proposal)}'] button", text: "Approve and Create Budget"
     assert_select "form[action='#{budget_proposal_path(proposal)}'] button", text: "Delete Proposal"
+  end
+
+  test "show displays only stored AI savings suggestions with their evidence" do
+    proposal = create(:budget_proposal, proposal: proposal_payload, ai_savings_recommendations: [
+      {
+        "title" => "Review restaurant frequency",
+        "category_or_merchant" => "Restaurants / Local Cafe",
+        "explanation" => "Repeated discretionary purchases are concentrated at this merchant.",
+        "current_spending_cents" => 42_000,
+        "suggested_target_cents" => 32_000,
+        "estimated_monthly_savings_cents" => 10_000,
+        "estimated_annual_savings_cents" => 120_000,
+        "confidence" => "medium",
+        "supporting_evidence" => [ "Six-month average is $420", "Local Cafe represents 45% of category spending" ]
+      }
+    ])
+
+    get budget_proposal_path(proposal)
+
+    assert_response :success
+    assert_select "#ai-savings-suggestions", text: /Review restaurant frequency/
+    assert_select "#ai-savings-suggestions", text: /Restaurants \/ Local Cafe/
+    assert_select "#ai-savings-suggestions", text: /Medium confidence/
+    assert_select "#ai-savings-suggestions", text: /Six-month average is \$420/
+    assert_select "#ai-savings-suggestions", text: /\$100\.00 \/ month/
+    assert_select "#ai-savings-suggestions", text: /\$1,200\.00 \/ year/
+    assert_select "#planned-savings-summary", text: /\$500\.00/
+    assert_equal 90_000, proposal.total_assigned_cents
   end
 
   test "zero-based proposal displays no unassigned amount" do

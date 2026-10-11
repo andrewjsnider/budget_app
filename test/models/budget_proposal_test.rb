@@ -44,4 +44,23 @@ class BudgetProposalTest < ActiveSupport::TestCase
     assert_equal [ "Emergency Fund", "Vacation" ], proposal.planned_savings_allocations.pluck("name")
     assert_equal 90_000, proposal.planned_savings_allocations_total_cents
   end
+
+  test "stored AI suggestions stay separate from planned savings and proposal totals" do
+    proposal = build(:budget_proposal, proposal: {
+      "recurring_outside_income_cents" => 100_000,
+      "proposed_expense_total_cents" => 60_000,
+      "proposed_savings_cents" => 40_000
+    }, ai_savings_recommendations: [
+      {
+        "title" => "Review restaurant frequency",
+        "estimated_monthly_savings_cents" => 10_000,
+        "estimated_annual_savings_cents" => 120_000
+      }
+    ])
+
+    assert_equal 40_000, proposal.proposed_savings_cents
+    assert_equal 100_000, proposal.total_assigned_cents
+    assert_equal 10_000, proposal.estimated_additional_monthly_savings_cents
+    assert_equal 120_000, proposal.estimated_additional_annual_savings_cents
+  end
 end
