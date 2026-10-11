@@ -41,6 +41,7 @@ class FinancialPlanning::BudgetProposalBuilderTest < ActiveSupport::TestCase
     assert_equal 6, proposal[:recurring_outside_income_monthly_totals_cents].length
     assert_equal 400_000, proposal[:recurring_outside_income_monthly_totals_cents].fetch(history_month.iso8601)
     assert_equal 30_000, proposal[:historical_category_spending_cents].fetch("3").fetch(expense.id.to_s)
+    assert_equal proposal[:proposed_savings_cents], proposal[:planned_savings_allocations].sum { |row| row.fetch(:proposed_cents) }
     assert_equal TransactionClassification::TRANSFER_KINDS, proposal.dig(:exclusions, :transfer_kinds)
   end
 

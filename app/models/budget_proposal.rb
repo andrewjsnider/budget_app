@@ -1,6 +1,7 @@
 class BudgetProposal < ApplicationRecord
   POLICY_VERSION = "budget-proposal-v1"
   STATUSES = %w[draft applied].freeze
+  SAVINGS_CATEGORY_PATTERN = /\b(savings|emergency fund|vacation fund)\b/i
 
   belongs_to :budget_month, optional: true
 
@@ -34,6 +35,35 @@ class BudgetProposal < ApplicationRecord
     proposal.fetch("proposed_savings_cents", 0).to_i
   end
 
+  def savings_rate_percentage
+    return 0.0 unless proposed_income_cents.positive?
+
+    proposed_savings_cents.fdiv(proposed_income_cents) * 100
+  end
+
+  def planned_savings_allocations
+    rows = proposal["planned_savings_allocations"]
+    return rows.select { |row| row.is_a?(Hash) } if rows.is_a?(Array)
+
+    inferred = inferred_savings_allocations
+    inferred.sum { |allocation| allocation.fetch("proposed_cents") } == proposed_savings_cents ? inferred : default_savings_allocation
+  end
+
+  def planned_savings_allocations_total_cents
+    planned_savings_allocations.sum { |allocation| allocation.fetch("proposed_cents", 0).to_i }
+  end
+
+  def savings_category_assignment?(row)
+    group = row["category_group"]
+    name = row["category_name"]
+    if group.blank? && row["category_id"].present?
+      group, stored_name = Category.where(id: row["category_id"]).pick(:group, :name)
+      name ||= stored_name
+    end
+
+    group.to_s.casecmp("savings").zero? || name.to_s.match?(SAVINGS_CATEGORY_PATTERN)
+  end
+
   def total_assigned_cents
     proposed_expense_cents + proposed_savings_cents
   end
@@ -43,6 +73,23 @@ class BudgetProposal < ApplicationRecord
   end
 
   private
+
+  def default_savings_allocation
+    return [] unless proposed_savings_cents.positive?
+
+    [ { "name" => "Planned savings", "proposed_cents" => proposed_savings_cents } ]
+  end
+
+  def inferred_savings_allocations
+    proposed_categories.filter_map do |row|
+      next unless savings_category_assignment?(row)
+
+      {
+        "name" => row.fetch("category_name", "Savings"),
+        "proposed_cents" => row.fetch("proposed_cents", 0).to_i
+      }
+    end
+  end
 
   def month_starts_on_first_day
     errors.add(:month, "must be the first day of the month") if month.present? && month.day != 1
@@ -54,6 +101,13 @@ class BudgetProposal < ApplicationRecord
       errors.add(:applied_at, "must be present when applied") if applied_at.blank?
     elsif budget_month_id.present? || applied_at.present?
       errors.add(:base, "A draft proposal cannot be linked to a budget")
+    end
+
+    if replaced_existing_budget?
+      errors.add(:replaced_at, "must be present when an existing budget was replaced") if replaced_at.blank?
+      errors.add(:base, "Only an applied proposal can record a replacement") unless applied?
+    elsif replaced_at.present?
+      errors.add(:replaced_at, "must be blank when no budget was replaced")
     end
   end
 

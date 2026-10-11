@@ -14,41 +14,76 @@
       %p{ class: "mt-2 text-stone-700" }
         Budget proposal ·
         %strong= budget_proposal_status(@proposal, validation: @validation)
-
-    %div{ class: "flex flex-wrap items-center gap-3" }
-      - if @proposal.applied?
-        = link_to "View Budget", budget_month_path(month: @proposal.budget_month.month.strftime("%Y-%m")), class: "border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
-      - else
-        - if @validation.valid? && @budget_month.nil?
-          = button_to "Approve and Create Budget",
-            approve_budget_proposal_path(@proposal),
-            method: :post,
-            form: { data: { turbo_confirm: "Approve this proposal and create the #{@proposal.month.strftime('%B %Y')} budget?" } },
-            class: "border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
-        = button_to "Delete Proposal",
-          budget_proposal_path(@proposal),
-          method: :delete,
-          form: { data: { turbo_confirm: "Delete this draft budget proposal?" } },
-          class: "border border-red-700 px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+    - if @proposal.applied?
+      = link_to "View Budget", budget_month_path(month: @proposal.budget_month.month.strftime("%Y-%m")), class: "border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
 
   - if @budget_month && !@proposal.applied?
-    %div{ class: "mt-6 border border-amber-300 bg-amber-50 p-4 text-sm" }
-      A budget already exists for this month, so this proposal cannot be approved.
-      = link_to "View the existing budget", budget_month_path(month: @budget_month.month.strftime("%Y-%m")), class: "ml-1 underline font-medium"
+    %div{ class: "mt-6 border border-amber-400 bg-amber-50 p-4 text-sm" }
+      %strong= "#{@proposal.month.strftime('%B %Y')} already has a budget."
+      %p{ class: "mt-1 text-stone-700" }
+        Replacing it will update only the category assignments and planned savings. Historical transactions and account data will not change.
+      = link_to "View Existing Budget", budget_month_path(month: @budget_month.month.strftime("%Y-%m")), class: "mt-3 inline-block underline font-medium"
 
-  %div{ class: "mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4" }
+    %section#budget-comparison{ class: "mt-6" }
+      %h2{ class: "text-lg font-semibold" } Existing budget compared with this proposal
+      %div{ class: "mt-3 overflow-x-auto border border-stone-200" }
+        %table{ class: "w-full text-sm" }
+          %thead
+            %tr{ class: "border-b border-stone-200 bg-stone-50" }
+              %th{ class: "p-3 text-left" }
+              %th{ class: "p-3 text-right" } Existing budget
+              %th{ class: "p-3 text-right" } Proposal
+          %tbody
+            %tr{ class: "border-t border-stone-200" }
+              %th{ class: "p-3 text-left font-medium" } Total income
+              %td{ class: "p-3 text-right" }= number_to_currency(@budget_comparison.existing_income_cents / 100.0)
+              %td{ class: "p-3 text-right" }= number_to_currency(@budget_comparison.proposal_income_cents / 100.0)
+            %tr{ class: "border-t border-stone-200" }
+              %th{ class: "p-3 text-left font-medium" } Total spending
+              %td{ class: "p-3 text-right" }= number_to_currency(@budget_comparison.existing_spending_cents / 100.0)
+              %td{ class: "p-3 text-right" }= number_to_currency(@budget_comparison.proposal_spending_cents / 100.0)
+            %tr{ class: "border-t border-stone-200" }
+              %th{ class: "p-3 text-left font-medium" } Planned savings
+              %td{ class: "p-3 text-right" }= number_to_currency(@budget_comparison.existing_savings_cents / 100.0)
+              %td{ class: "p-3 text-right" }= number_to_currency(@budget_comparison.proposal_savings_cents / 100.0)
+            %tr{ class: "border-t border-stone-200" }
+              %th{ class: "p-3 text-left font-medium" } Savings rate
+              %td{ class: "p-3 text-right" }= number_to_percentage(@budget_comparison.existing_savings_rate, precision: 1)
+              %td{ class: "p-3 text-right" }= number_to_percentage(@budget_comparison.proposal_savings_rate, precision: 1)
+
+      - if @budget_comparison.category_changes.any?
+        %h3{ class: "mt-5 font-semibold" } Category assignment changes
+        %div{ class: "mt-3 overflow-x-auto border border-stone-200" }
+          %table{ class: "w-full text-sm" }
+            %thead
+              %tr{ class: "border-b border-stone-200 bg-stone-50" }
+                %th{ class: "p-3 text-left" } Category
+                %th{ class: "p-3 text-right" } Existing
+                %th{ class: "p-3 text-right" } Proposal
+            %tbody
+              - @budget_comparison.category_changes.each do |change|
+                %tr{ class: "border-t border-stone-200" }
+                  %td{ class: "p-3 font-medium" }= change.category_name
+                  %td{ class: "p-3 text-right" }= number_to_currency(change.existing_cents / 100.0)
+                  %td{ class: "p-3 text-right" }= number_to_currency(change.proposal_cents / 100.0)
+
+  %div{ class: "mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5" }
     %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-600" } Available income
+      %div{ class: "text-sm text-stone-600" } Proposed income
       %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.proposed_income_cents / 100.0)
     %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-600" } Proposed expenses
+      %div{ class: "text-sm text-stone-600" } Proposed spending
       %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.proposed_expense_cents / 100.0)
-    %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-600" } Proposed savings
+    %div#planned-savings-summary{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Planned savings
       %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.proposed_savings_cents / 100.0)
-    %div{ class: "border border-stone-200 p-4" }
-      %div{ class: "text-sm text-stone-600" } Amount remaining
-      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.amount_remaining_cents / 100.0)
+    %div#savings-rate-summary{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Savings rate
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_percentage(@proposal.savings_rate_percentage, precision: 1)
+    %div#additional-savings-summary{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Additional potential savings
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@additional_potential_monthly_cents / 100.0)
+      %div{ class: "text-xs text-stone-600" } per month
 
   %div{ class: "mt-4 border border-stone-200 p-4 text-sm" }
     %div{ class: "flex flex-wrap gap-x-8 gap-y-2" }
@@ -65,25 +100,8 @@
         %span{ class: "text-stone-600" } Generated:
         %strong= @proposal.created_at.strftime("%B %-d, %Y at %-I:%M %p")
 
-  - warning_items = @validation.errors + @validation.warnings
-  - uncategorized_cents = excluded.fetch("Uncategorized", 0).to_i
-  - credit_card_cents = excluded.fetch("Credit Card Payments", 0).to_i
-  - if warning_items.any? || uncategorized_cents.positive? || credit_card_cents.positive? || unresolved.fetch("count", 0).to_i.positive?
-    %section{ class: "mt-8 border border-amber-300 bg-amber-50 p-5" }
-      %h2{ class: "text-lg font-semibold" } Warnings
-      %ul{ class: "mt-3 list-disc space-y-1 pl-5 text-sm" }
-        - if uncategorized_cents.positive?
-          %li= "Excluded Uncategorized spending: #{number_to_currency(uncategorized_cents / 100.0)}"
-        - if credit_card_cents.positive?
-          %li= "Excluded Credit Card Payments: #{number_to_currency(credit_card_cents / 100.0)}"
-        - if unresolved.fetch("count", 0).to_i.positive?
-          %li
-            = "#{unresolved.fetch('count').to_i} unresolved transactions totaling #{number_to_currency(unresolved.fetch('amount_cents', 0).to_i / 100.0)} may affect this proposal."
-        - warning_items.each do |warning|
-          %li= warning
-
   %section{ class: "mt-10" }
-    %h2{ class: "text-xl font-semibold" } Income calculation
+    %h2{ class: "text-xl font-semibold" } Income
     %p{ class: "mt-2 text-sm text-stone-700" }
       The proposal uses scheduled recurring income for the budget month and compares it with recurring paycheck history.
 
@@ -99,7 +117,7 @@
 
   %section{ class: "mt-10" }
     %div{ class: "flex items-end justify-between" }
-      %h2{ class: "text-xl font-semibold" } Category assignments
+      %h2{ class: "text-xl font-semibold" } Proposed Budget
       %div{ class: "text-sm text-stone-600" }= "#{@proposal.proposed_categories.length} categories"
 
     %div{ class: "mt-3 overflow-x-auto border border-stone-200" }
@@ -122,3 +140,111 @@
               %td{ class: "p-3 text-right text-stone-700" }= number_to_currency(averages.fetch("6", 0).to_i / 100.0)
               %td{ class: "p-3 text-right text-stone-700" }= number_to_currency(averages.fetch("12", 0).to_i / 100.0)
               %td{ class: "p-3 text-right font-semibold" }= number_to_currency(row.fetch("proposed_cents", 0).to_i / 100.0)
+
+  %section#savings{ class: "mt-10" }
+    %h2{ class: "text-xl font-semibold" } Savings
+    %p{ class: "mt-2 text-sm text-stone-700" }
+      Planned savings are part of this proposal. Recommendations below are separate opportunities and are not applied automatically.
+
+    %div{ class: "mt-4 border border-stone-200" }
+      %dl{ class: "divide-y divide-stone-200 text-sm" }
+        %div{ class: "flex items-center justify-between gap-6 p-3" }
+          %dt{ class: "text-stone-700" } Available paycheck income
+          %dd{ class: "font-medium" }= number_to_currency(@proposal.proposed_income_cents / 100.0)
+        %div{ class: "flex items-center justify-between gap-6 p-3" }
+          %dt{ class: "text-stone-700" } Total proposed spending
+          %dd{ class: "font-medium" }= number_to_currency(@proposal.proposed_expense_cents / 100.0)
+        %div{ class: "flex items-center justify-between gap-6 p-3" }
+          %dt{ class: "text-stone-700" } Planned savings
+          %dd{ class: "font-semibold" }= number_to_currency(@proposal.proposed_savings_cents / 100.0)
+        %div{ class: "flex items-center justify-between gap-6 p-3" }
+          %dt{ class: "text-stone-700" } Savings rate
+          %dd{ class: "font-medium" }= number_to_percentage(@proposal.savings_rate_percentage, precision: 1)
+        %div#unassigned-amount{ class: "flex items-center justify-between gap-6 p-3" }
+          %dt{ class: "text-stone-700" } Unassigned
+          %dd{ class: "font-medium" }= number_to_currency(@proposal.amount_remaining_cents / 100.0)
+
+    - if @proposal.planned_savings_allocations.any?
+      %div{ class: "mt-6" }
+        %h3{ class: "font-semibold" } Planned savings
+        %ul{ class: "mt-3 space-y-2 text-sm" }
+          - @proposal.planned_savings_allocations.each do |allocation|
+            %li{ class: "flex items-center justify-between gap-6 border-b border-stone-100 pb-2" }
+              %span= allocation.fetch("name", "Savings")
+              %strong= number_to_currency(allocation.fetch("proposed_cents", 0).to_i / 100.0)
+        %div{ class: "mt-3 flex items-center justify-between gap-6 text-sm" }
+          %span Total planned savings
+          %strong= number_to_currency(@proposal.planned_savings_allocations_total_cents / 100.0)
+
+    %div{ class: "mt-10" }
+      %h3{ class: "text-lg font-semibold" } Ways to save more
+      %div{ class: "mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" }
+        %div{ class: "border border-stone-200 p-4" }
+          %div{ class: "text-sm text-stone-600" } Additional potential savings
+          %div{ class: "mt-1 text-xl font-semibold" }= "#{number_to_currency(@additional_potential_monthly_cents / 100.0)} / month"
+        %div{ class: "border border-stone-200 p-4" }
+          %div{ class: "text-sm text-stone-600" } Additional potential savings
+          %div{ class: "mt-1 text-xl font-semibold" }= "#{number_to_currency(@additional_potential_annual_cents / 100.0)} / year"
+
+      - if @savings_recommendations.any?
+        %div{ class: "mt-4 overflow-x-auto border border-stone-200" }
+          %table{ class: "w-full min-w-max text-sm" }
+            %thead
+              %tr{ class: "border-b border-stone-200 bg-stone-50" }
+                %th{ class: "p-3 text-left" } Category / merchant
+                %th{ class: "p-3 text-right" } Current spending basis
+                %th{ class: "p-3 text-right" } Suggested target
+                %th{ class: "p-3 text-right" } Monthly potential
+                %th{ class: "p-3 text-right" } Annual potential
+                %th{ class: "p-3 text-left" } Why
+            %tbody
+              - @savings_recommendations.each do |recommendation|
+                %tr{ class: "border-t border-stone-200" }
+                  %td{ class: "p-3 font-medium" }= recommendation.category_name
+                  %td{ class: "p-3 text-right" }
+                    = number_to_currency(recommendation.current_spending_cents / 100.0)
+                    %div{ class: "text-xs text-stone-600" }= recommendation.current_spending_basis
+                  %td{ class: "p-3 text-right" }= number_to_currency(recommendation.suggested_target_cents / 100.0)
+                  %td{ class: "p-3 text-right font-medium" }= number_to_currency(recommendation.potential_monthly_savings_cents / 100.0)
+                  %td{ class: "p-3 text-right" }= number_to_currency(recommendation.potential_annual_savings_cents / 100.0)
+                  %td{ class: "p-3 text-stone-700" }= recommendation.explanation
+      - else
+        %p{ class: "mt-4 text-sm text-stone-600" } No additional savings opportunities were identified from the saved spending history.
+
+  - warning_items = @validation.errors + @validation.warnings
+  - uncategorized_cents = excluded.fetch("Uncategorized", 0).to_i
+  - credit_card_cents = excluded.fetch("Credit Card Payments", 0).to_i
+  - if warning_items.any? || uncategorized_cents.positive? || credit_card_cents.positive? || unresolved.fetch("count", 0).to_i.positive?
+    %section{ class: "mt-10 border border-amber-300 bg-amber-50 p-5" }
+      %h2{ class: "text-lg font-semibold" } Warnings
+      %ul{ class: "mt-3 list-disc space-y-1 pl-5 text-sm" }
+        - if uncategorized_cents.positive?
+          %li= "Excluded Uncategorized spending: #{number_to_currency(uncategorized_cents / 100.0)}"
+        - if credit_card_cents.positive?
+          %li= "Excluded Credit Card Payments: #{number_to_currency(credit_card_cents / 100.0)}"
+        - if unresolved.fetch("count", 0).to_i.positive?
+          %li= "#{unresolved.fetch('count').to_i} unresolved transactions totaling #{number_to_currency(unresolved.fetch('amount_cents', 0).to_i / 100.0)} may affect this proposal."
+        - warning_items.each do |warning|
+          %li= warning
+
+  - unless @proposal.applied?
+    %div{ class: "mt-10 flex flex-wrap items-center gap-3 border-t border-stone-200 pt-6" }
+      - if @validation.valid?
+        - if @budget_month
+          = button_to "Replace Existing Budget",
+            approve_budget_proposal_path(@proposal),
+            method: :post,
+            params: { replace_existing: "1" },
+            form: { data: { turbo_confirm: "Replace the existing #{@proposal.month.strftime('%B %Y')} budget with this proposal?\n\nThis will replace the current #{@proposal.month.strftime('%B %Y')} category assignments with the amounts from this proposal. Historical transactions will not be changed." } },
+            class: "border border-red-700 bg-red-700 px-4 py-2 text-sm text-white hover:bg-red-800"
+        - else
+          = button_to "Approve and Create Budget",
+            approve_budget_proposal_path(@proposal),
+            method: :post,
+            form: { data: { turbo_confirm: "Approve this proposal and create the #{@proposal.month.strftime('%B %Y')} budget?" } },
+            class: "border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
+      = button_to "Delete Proposal",
+        budget_proposal_path(@proposal),
+        method: :delete,
+        form: { data: { turbo_confirm: "Delete this draft budget proposal?" } },
+        class: "border border-red-700 px-4 py-2 text-sm text-red-700 hover:bg-red-50"

@@ -68,6 +68,7 @@ module FinancialPlanning
         buffer_cents: buffer,
         buffer_basis_points: BUFFER_BASIS_POINTS,
         proposed_savings_cents: savings,
+        planned_savings_allocations: planned_savings_allocations(savings),
         sinking_funds: { supported: false, reason: "No sinking-fund model exists" },
         excluded_category_spending_cents: excluded_category_spending,
         unresolved_transactions: unresolved_transactions,
@@ -153,6 +154,7 @@ module FinancialPlanning
         {
           category_id: category.id,
           category_name: category.name,
+          category_group: category.group,
           previous_budget_cents: previous,
           average_spending_cents: history_values,
           recurring_obligation_cents: recurring,
@@ -160,6 +162,12 @@ module FinancialPlanning
           rationale: "max(previous_budget, three_month_average, recurring_obligation)"
         }
       end
+    end
+
+    def planned_savings_allocations(savings_cents)
+      return [] unless savings_cents.positive?
+
+      [ { name: "Planned savings", proposed_cents: savings_cents } ]
     end
 
     def excluded_category_spending

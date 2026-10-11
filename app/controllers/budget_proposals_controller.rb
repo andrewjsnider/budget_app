@@ -12,11 +12,12 @@ class BudgetProposalsController < ApplicationController
   end
 
   def approve
-    result = BudgetProposals::Approve.call(@proposal)
+    result = BudgetProposals::Approve.call(@proposal, replace_existing: params[:replace_existing] == "1")
 
     if result.success?
+      action = result.replaced? ? "replaced" : "created"
       redirect_to budget_month_path(month: result.budget_month.month.strftime("%Y-%m")),
-        notice: "#{result.budget_month.month.strftime('%B %Y')} budget created."
+        notice: "#{result.budget_month.month.strftime('%B %Y')} budget #{action}."
     else
       prepare_show
       @budget_month = result.existing_budget_month || @budget_month
@@ -45,5 +46,11 @@ class BudgetProposalsController < ApplicationController
     @month = @proposal.month
     @validation = BudgetProposals::Validation.call(@proposal)
     @budget_month = @proposal.budget_month || BudgetMonth.find_by(month: @proposal.month)
+    @savings_recommendations = FinancialPlanning::SavingsRecommendations.call(@proposal)
+    @additional_potential_monthly_cents = @savings_recommendations.sum(&:potential_monthly_savings_cents)
+    @additional_potential_annual_cents = @savings_recommendations.sum(&:potential_annual_savings_cents)
+    if @budget_month && !@proposal.applied?
+      @budget_comparison = BudgetProposals::Comparison.call(@proposal, @budget_month)
+    end
   end
 end

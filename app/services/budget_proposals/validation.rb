@@ -24,6 +24,7 @@ module BudgetProposals
       income = nonnegative_integer(payload, "recurring_outside_income_cents", "Total available income", errors)
       expenses = nonnegative_integer(payload, "proposed_expense_total_cents", "Total proposed expenses", errors)
       savings = nonnegative_integer(payload, "proposed_savings_cents", "Proposed savings", errors)
+      validate_savings_allocations(payload["planned_savings_allocations"], savings, errors)
 
       if categories.is_a?(Array)
         validate_categories(categories, expenses, errors)
@@ -75,6 +76,28 @@ module BudgetProposals
       errors << "A category can only be assigned once." if category_ids.compact.uniq.length != category_ids.compact.length
       if expected_total && calculated_total != expected_total
         errors << "Category assignments do not equal the proposed expense total."
+      end
+    end
+
+    def validate_savings_allocations(rows, expected_total, errors)
+      return if rows.nil?
+
+      unless rows.is_a?(Array)
+        errors << "Planned savings allocations are invalid."
+        return
+      end
+
+      calculated_total = rows.each_with_index.sum do |row, index|
+        unless row.is_a?(Hash) && row["name"].present? && row["proposed_cents"].is_a?(Integer) && row["proposed_cents"] >= 0
+          errors << "Planned savings allocation #{index + 1} is invalid."
+          next 0
+        end
+
+        row["proposed_cents"]
+      end
+
+      if expected_total && calculated_total != expected_total
+        errors << "Planned savings allocations do not equal proposed savings."
       end
     end
 

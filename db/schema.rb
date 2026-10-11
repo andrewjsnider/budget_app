@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_11_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_11_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_11_120000) do
     t.date "month"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "planned_savings_cents", default: 0, null: false
+    t.jsonb "planned_savings_allocations", default: [], null: false
     t.index ["month"], name: "index_budget_months_on_month", unique: true
   end
 
@@ -56,10 +58,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_11_120000) do
     t.datetime "updated_at", null: false
     t.bigint "budget_month_id"
     t.datetime "applied_at"
-    t.index ["budget_month_id"], name: "index_budget_proposals_on_budget_month_id", unique: true
+    t.boolean "replaced_existing_budget", default: false, null: false
+    t.datetime "replaced_at"
+    t.index ["budget_month_id"], name: "index_budget_proposals_on_budget_month_id"
     t.index ["month", "input_digest"], name: "index_budget_proposals_on_month_and_input_digest", unique: true
     t.check_constraint "EXTRACT(day FROM month) = 1::numeric", name: "budget_proposals_month_first_day"
     t.check_constraint "input_digest::text ~ '^[0-9a-f]{64}$'::text", name: "budget_proposals_input_digest"
+    t.check_constraint "replaced_existing_budget = false AND replaced_at IS NULL OR status::text = 'applied'::text AND replaced_existing_budget = true AND replaced_at IS NOT NULL", name: "budget_proposals_replacement_audit"
     t.check_constraint "status::text = 'draft'::text AND budget_month_id IS NULL AND applied_at IS NULL OR status::text = 'applied'::text AND budget_month_id IS NOT NULL AND applied_at IS NOT NULL", name: "budget_proposals_application_fields"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'applied'::character varying]::text[])", name: "budget_proposals_status"
   end
