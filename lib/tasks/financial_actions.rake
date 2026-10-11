@@ -92,7 +92,8 @@ namespace :budget do
     month = Date.strptime(ENV.fetch("MONTH"), "%Y-%m").beginning_of_month
     result = FinancialPlanning::BudgetProposalBuilder.call(
       month: month,
-      dry_run: ENV["DRY_RUN"] == "1"
+      dry_run: ENV["DRY_RUN"] == "1",
+      supersede: ENV["SUPERSEDE"] == "1"
     )
     if ENV["JSON"] == "1"
       puts JSON.pretty_generate(result)
@@ -100,7 +101,7 @@ namespace :budget do
       proposal = result.fetch(:proposal)
       puts "Budget proposal: #{proposal.fetch(:month)}"
       puts "Status: draft"
-      puts "Recurring outside income: #{proposal.fetch(:recurring_outside_income_cents)} cents"
+      puts "Available paycheck income: #{proposal.fetch(:available_paycheck_income_cents)} cents"
       puts "Proposed expenses: #{proposal.fetch(:proposed_expense_total_cents)} cents"
       puts "Buffer: #{proposal.fetch(:buffer_cents)} cents"
       puts "Proposed savings: #{proposal.fetch(:proposed_savings_cents)} cents"

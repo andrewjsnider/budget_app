@@ -3,7 +3,7 @@ require "test_helper"
 class BudgetProposalTest < ActiveSupport::TestCase
   test "planned savings, savings rate, allocation total, and unassigned amount stay distinct" do
     proposal = build(:budget_proposal, proposal: {
-      "recurring_outside_income_cents" => 620_000,
+      "available_paycheck_income_cents" => 620_000,
       "proposed_expense_total_cents" => 530_000,
       "proposed_savings_cents" => 90_000,
       "planned_savings_allocations" => [
@@ -21,7 +21,7 @@ class BudgetProposalTest < ActiveSupport::TestCase
 
   test "a proposal with no paycheck income has a zero savings rate" do
     proposal = build(:budget_proposal, proposal: {
-      "recurring_outside_income_cents" => 0,
+      "available_paycheck_income_cents" => 0,
       "proposed_expense_total_cents" => 0,
       "proposed_savings_cents" => 0
     })
@@ -47,7 +47,7 @@ class BudgetProposalTest < ActiveSupport::TestCase
 
   test "stored AI suggestions stay separate from planned savings and proposal totals" do
     proposal = build(:budget_proposal, proposal: {
-      "recurring_outside_income_cents" => 100_000,
+      "available_paycheck_income_cents" => 100_000,
       "proposed_expense_total_cents" => 60_000,
       "proposed_savings_cents" => 40_000
     }, ai_savings_recommendations: [

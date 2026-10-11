@@ -1,5 +1,5 @@
 class BudgetProposal < ApplicationRecord
-  POLICY_VERSION = "budget-proposal-v1"
+  POLICY_VERSION = "budget-proposal-v2"
   STATUSES = %w[draft applied].freeze
   SAVINGS_CATEGORY_PATTERN = /\b(savings|emergency fund|vacation fund)\b/i
 
@@ -24,7 +24,9 @@ class BudgetProposal < ApplicationRecord
   end
 
   def proposed_income_cents
-    proposal.fetch("recurring_outside_income_cents", 0).to_i
+    proposal.fetch("available_paycheck_income_cents") do
+      proposal.fetch("recurring_outside_income_cents", 0)
+    end.to_i
   end
 
   def proposed_expense_cents
@@ -97,8 +99,8 @@ class BudgetProposal < ApplicationRecord
       income: {
         planning_baseline: proposal["planning_baseline"],
         available_paycheck_income_cents: proposed_income_cents,
-        monthly_paycheck_totals_cents: proposal.fetch("recurring_outside_income_monthly_totals_cents", {}),
-        paycheck_averages_cents: proposal.fetch("recurring_outside_income_averages_cents", {}),
+        monthly_paycheck_totals_cents: proposal.fetch("paycheck_income_monthly_totals_cents", {}),
+        six_month_paycheck_average_cents: proposal["paycheck_income_six_month_average_cents"],
         total_income_previous_month_cents: proposal["total_outside_income_previous_month_cents"]
       },
       proposed_income_cents: proposed_income_cents,
@@ -109,6 +111,7 @@ class BudgetProposal < ApplicationRecord
       amount_remaining_cents: amount_remaining_cents,
       proposed_categories: proposed_categories,
       recurring_obligations: proposal.fetch("recurring_obligation_details", []),
+      recurring_detection_gaps: proposal.fetch("recurring_detection_gaps", []),
       subscriptions: proposal.fetch("subscriptions", []),
       merchant_concentration: proposal.fetch("merchant_concentration", []),
       excluded_category_spending_cents: proposal.fetch("excluded_category_spending_cents", {}),

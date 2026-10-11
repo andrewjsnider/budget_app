@@ -1,14 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+readonly APP_ROOT="/Users/ajs/workspace/budget_app"
+readonly APP_RUBY_VERSION="3.3.9"
+
 export RBENV_ROOT="/Users/ajs/.rbenv"
-export RBENV_VERSION="3.3.9"
-export PATH="$RBENV_ROOT/shims:/usr/local/opt/rbenv/bin:$PATH"
+
+rbenv_bin=""
+for candidate in \
+  "$RBENV_ROOT/bin/rbenv" \
+  /usr/local/bin/rbenv \
+  /usr/local/opt/rbenv/bin/rbenv \
+  /opt/homebrew/bin/rbenv \
+  /opt/homebrew/opt/rbenv/bin/rbenv
+do
+  if [[ -x "$candidate" ]]; then
+    rbenv_bin="$candidate"
+    break
+  fi
+done
+
+if [[ -z "$rbenv_bin" ]]; then
+  echo "paperclip-env: rbenv is not installed in an expected location" >&2
+  exit 127
+fi
+
+export PATH="$(dirname "$rbenv_bin"):$RBENV_ROOT/shims:$PATH"
+eval "$("$rbenv_bin" init - --no-rehash bash)"
+export RBENV_VERSION="$APP_RUBY_VERSION"
 
 export PGHOST="127.0.0.1"
 export PGPORT="5432"
 
-cd /Users/ajs/workspace/budget_app
+cd "$APP_ROOT"
 
 exec "$@"
-

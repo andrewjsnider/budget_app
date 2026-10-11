@@ -104,7 +104,7 @@ statements:
 Preview October without database writes:
 
 ```sh
-bin/rails budget:process_month MONTH=2026-10 DRY_RUN=1 JSON=1
+bin/paperclip-env bin/rails budget:process_month MONTH=2026-10 DRY_RUN=1 JSON=1
 ```
 
 The default source is `/Users/ajs/Private/finance/2026-10`; the default output is its `output` directory. Override them with `SOURCE_DIR` and `OUTPUT_DIR`. Both directories must remain outside this repository.
@@ -130,7 +130,7 @@ Categorize explicit transactions or apply active payee rules to an explicit tran
 ```
 
 ```sh
-bin/rails budget:categorize INPUT=private/actions/categorize.json DRY_RUN=1 JSON=1
+bin/paperclip-env bin/rails budget:categorize INPUT=private/actions/categorize.json DRY_RUN=1 JSON=1
 ```
 
 Create or update payee rules. Apply mode always requires the reviewed confirmation token:
@@ -140,8 +140,8 @@ Create or update payee rules. Apply mode always requires the reviewed confirmati
 ```
 
 ```sh
-bin/rails budget:manage_payee_rules INPUT=private/actions/payee_rules.json DRY_RUN=1 JSON=1
-CONFIRM=apply-payee-rules-v1 bin/rails budget:manage_payee_rules INPUT=private/actions/payee_rules.json JSON=1
+bin/paperclip-env bin/rails budget:manage_payee_rules INPUT=private/actions/payee_rules.json DRY_RUN=1 JSON=1
+CONFIRM=apply-payee-rules-v1 bin/paperclip-env bin/rails budget:manage_payee_rules INPUT=private/actions/payee_rules.json JSON=1
 ```
 
 Classify exact transaction pairs as `internal_transfer`, `savings_transfer`, or `credit_card_payment`. Exact opposite amounts, different owned accounts, and dates within three days are required. Single positive inflows may be classified as `refund`, `reimbursement`, or `windfall`:
@@ -151,7 +151,7 @@ Classify exact transaction pairs as `internal_transfer`, `savings_transfer`, or 
 ```
 
 ```sh
-bin/rails budget:classify_transactions INPUT=private/actions/classifications.json DRY_RUN=1 JSON=1
+bin/paperclip-env bin/rails budget:classify_transactions INPUT=private/actions/classifications.json DRY_RUN=1 JSON=1
 ```
 
 Reviewed classifications are stored as separate auditable metadata and may be added to reconciled transactions when all classification validations pass. They never rewrite the underlying transactions or reconciliation records.
@@ -163,20 +163,21 @@ Record recurring expenses as positive magnitudes with type `subscription`, `util
 ```
 
 ```sh
-bin/rails budget:manage_recurring_expenses INPUT=private/actions/recurring.json DRY_RUN=1 JSON=1
+bin/paperclip-env bin/rails budget:manage_recurring_expenses INPUT=private/actions/recurring.json DRY_RUN=1 JSON=1
 ```
 
-Build a next-month proposal. Apply mode persists only an idempotent `draft`; it never creates or approves a `BudgetMonth`:
+Build a next-month proposal. Available income is the arithmetic mean of six explicit monthly paycheck totals identified through active W-2 income sources and legacy imported rows with an established payroll descriptor. Known active recurring expenses use their current scheduled amount, variable utilities without a recurring record use the same month last year plus 15% when history exists, and other categories use a six-month monthly spending average. Apply mode persists only an idempotent `draft`; it never creates or approves a `BudgetMonth`. Pass `SUPERSEDE=1` only when replacing older draft proposals for the same month:
 
 ```sh
-bin/rails budget:propose_budget MONTH=2026-11 DRY_RUN=1 JSON=1
-bin/rails budget:propose_budget MONTH=2026-11 JSON=1
+bin/paperclip-env bin/rails budget:propose_budget MONTH=2026-11 DRY_RUN=1 JSON=1
+bin/paperclip-env bin/rails budget:propose_budget MONTH=2026-11 JSON=1
+bin/paperclip-env bin/rails budget:propose_budget MONTH=2026-11 SUPERSEDE=1 JSON=1
 ```
 
 Read the deterministic proposal context used for agent review:
 
 ```sh
-bin/rails budget:proposal_context PROPOSAL_ID=123
+bin/paperclip-env bin/rails budget:proposal_context PROPOSAL_ID=123
 ```
 
 Store evidence-backed AI savings suggestions separately from the deterministic proposal totals:
@@ -201,13 +202,13 @@ Store evidence-backed AI savings suggestions separately from the deterministic p
 ```
 
 ```sh
-bin/rails budget:store_savings_recommendations INPUT=private/actions/proposal_savings.json DRY_RUN=1 JSON=1
-bin/rails budget:store_savings_recommendations INPUT=private/actions/proposal_savings.json JSON=1
+bin/paperclip-env bin/rails budget:store_savings_recommendations INPUT=private/actions/proposal_savings.json DRY_RUN=1 JSON=1
+bin/paperclip-env bin/rails budget:store_savings_recommendations INPUT=private/actions/proposal_savings.json JSON=1
 ```
 
 Rails does not generate these suggestions from spending trends. It only validates and stores the agent-authored recommendation snapshot. Storing suggestions does not change proposal assignments, proposal totals, or approval state.
 
-Transfer classifications leave ledger transactions intact but exclude them from budget income and expense analytics. Expense-category refunds remain included as positive offsets to spending. Reimbursements and windfalls remain explicitly distinguishable, and windfalls are excluded from the recurring-income history used alongside scheduled recurring income.
+Transfer classifications leave ledger transactions intact but exclude them from budget income and expense analytics. Expense-category refunds remain included as positive offsets to spending. Reimbursements, windfalls, business distributions, and unrelated positive transactions are excluded from paycheck income.
 
 This README would normally document whatever steps are necessary to get the
 application up and running.

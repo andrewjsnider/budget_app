@@ -51,7 +51,7 @@ class BudgetProposalsTest < ActionDispatch::IntegrationTest
     assert_select "#savings", text: /Total planned savings.*\$500\.00/m
     assert_select "#ai-savings-suggestions", text: /No savings suggestions have been generated for this proposal yet\./
     assert_includes response.body, "Groceries"
-    assert_includes response.body, "3-month spending average"
+    assert_includes response.body, "6-month spending average"
     assert_includes response.body, "Excluded Uncategorized spending"
     assert_select "form[action='#{approve_budget_proposal_path(proposal)}'] button", text: "Approve and Create Budget"
     assert_select "form[action='#{budget_proposal_path(proposal)}'] button", text: "Delete Proposal"
@@ -222,10 +222,10 @@ class BudgetProposalsTest < ActionDispatch::IntegrationTest
   def proposal_payload(month: Date.current.next_month.beginning_of_month)
     {
       "month" => month.iso8601,
-      "planning_baseline" => "recurring_outside_income",
-      "recurring_outside_income_cents" => 100_000,
-      "recurring_outside_income_monthly_totals_cents" => 6.downto(1).to_h { |offset| [ month.prev_month(offset).iso8601, 100_000 ] },
-      "recurring_outside_income_averages_cents" => { "6" => 100_000 },
+      "planning_baseline" => "six_month_paycheck_average",
+      "available_paycheck_income_cents" => 100_000,
+      "paycheck_income_monthly_totals_cents" => 6.downto(1).to_h { |offset| [ month.prev_month(offset).iso8601, 100_000 ] },
+      "paycheck_income_six_month_average_cents" => 100_000,
       "proposed_expense_total_cents" => 40_000,
       "proposed_savings_cents" => 50_000,
       "planned_savings_allocations" => [
@@ -233,15 +233,19 @@ class BudgetProposalsTest < ActionDispatch::IntegrationTest
         { "name" => "Vacation", "proposed_cents" => 20_000 }
       ],
       "excluded_category_spending_cents" => { "Uncategorized" => 12_000, "Credit Card Payments" => 0 },
+      "recurring_obligation_details" => [],
+      "exclusions" => { "transfer_kinds" => TransactionClassification::TRANSFER_KINDS },
       "proposed_categories" => [
         {
           "category_id" => @category.id,
           "category_name" => @category.name,
           "proposed_cents" => 40_000,
-          "average_spending_cents" => { "3" => 40_000, "6" => 35_000, "12" => 30_000 },
+          "average_spending_cents" => { "3" => 40_000, "6" => 40_000, "12" => 30_000 },
           "recurring_obligation_cents" => 0,
           "previous_budget_cents" => 0,
-          "rationale" => "max(previous_budget, three_month_average, recurring_obligation)"
+          "calculation_basis" => "six_month_spending_average",
+          "calculation_basis_label" => "6-month spending average",
+          "rationale" => "six_month_spending_average"
         }
       ]
     }

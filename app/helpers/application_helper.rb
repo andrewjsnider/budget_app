@@ -60,6 +60,13 @@ module ApplicationHelper
   end
 
   def budget_proposal_rationale(row)
+    return row["calculation_basis_label"] if row["calculation_basis_label"].present?
+
+    basis = row["calculation_basis"].to_s
+    return "Known recurring amount" if basis == "known_recurring_amount"
+    return "Same month last year + 15%" if basis == "same_month_last_year_plus_15_percent"
+    return "6-month spending average" if basis == "six_month_spending_average"
+
     rationale = row["rationale"].to_s
     return "Recurring obligation" if row["recurring_obligation_cents"].to_i == row["proposed_cents"].to_i && row["proposed_cents"].to_i.positive?
     return "Prior budget" if row["previous_budget_cents"].to_i == row["proposed_cents"].to_i && row["proposed_cents"].to_i.positive?

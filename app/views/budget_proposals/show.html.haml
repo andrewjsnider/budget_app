@@ -1,5 +1,5 @@
 - payload = @proposal.proposal
-- monthly_income = payload["recurring_outside_income_monthly_totals_cents"] || payload["monthly_paycheck_totals_cents"]
+- monthly_income = payload["paycheck_income_monthly_totals_cents"] || payload["recurring_outside_income_monthly_totals_cents"] || payload["monthly_paycheck_totals_cents"]
 - monthly_income = {} unless monthly_income.is_a?(Hash)
 - excluded = payload["excluded_category_spending_cents"]
 - excluded = {} unless excluded.is_a?(Hash)
@@ -106,7 +106,7 @@
   %section{ class: "ui-section mt-8 border-t-emerald-300" }
     %h2{ class: "ui-section-title" } Income
     %p{ class: "mt-2 text-sm text-stone-700" }
-      The proposal uses scheduled recurring income for the budget month and compares it with recurring paycheck history.
+      Available income is the arithmetic mean of the six explicit monthly paycheck totals before the proposal month. Paychecks are identified through active income sources.
 
     - if monthly_income.present?
       %div{ class: "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" }
@@ -116,7 +116,7 @@
             %div{ class: "mt-1 font-medium" }= number_to_currency(cents.to_i / 100.0)
       %p{ class: "mt-3 text-sm" }
         Six-month paycheck average:
-        %strong= number_to_currency(payload.fetch("recurring_outside_income_averages_cents", {}).fetch("6", 0).to_i / 100.0)
+        %strong= number_to_currency(payload.fetch("paycheck_income_six_month_average_cents", @proposal.proposed_income_cents).to_i / 100.0)
 
   %section{ class: "ui-section mt-8" }
     %div{ class: "flex items-end justify-between" }

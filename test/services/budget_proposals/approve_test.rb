@@ -207,20 +207,27 @@ class BudgetProposals::ApproveTest < ActiveSupport::TestCase
 
     {
       "month" => month.iso8601,
-      "planning_baseline" => "recurring_outside_income",
-      "recurring_outside_income_cents" => 100_000,
+      "planning_baseline" => "six_month_paycheck_average",
+      "available_paycheck_income_cents" => 100_000,
+      "paycheck_income_monthly_totals_cents" => 6.downto(1).to_h { |offset| [ month.prev_month(offset).iso8601, 100_000 ] },
+      "paycheck_income_six_month_average_cents" => 100_000,
       "proposed_expense_total_cents" => expenses,
       "proposed_savings_cents" => 100_000 - expenses,
       "planned_savings_allocations" => [
         { "name" => "Planned savings", "proposed_cents" => 100_000 - expenses }
       ],
+      "recurring_obligation_details" => [],
+      "exclusions" => { "transfer_kinds" => TransactionClassification::TRANSFER_KINDS },
       "proposed_categories" => assignments.map do |category, amount|
         {
           "category_id" => category.id,
           "category_name" => category.name,
           "proposed_cents" => amount,
           "average_spending_cents" => { "3" => amount, "6" => amount, "12" => amount },
-          "rationale" => "max(previous_budget, three_month_average, recurring_obligation)"
+          "recurring_obligation_cents" => 0,
+          "calculation_basis" => "six_month_spending_average",
+          "calculation_basis_label" => "6-month spending average",
+          "rationale" => "six_month_spending_average"
         }
       end
     }
