@@ -1,0 +1,124 @@
+- payload = @proposal.proposal
+- monthly_income = payload["recurring_outside_income_monthly_totals_cents"] || payload["monthly_paycheck_totals_cents"]
+- monthly_income = {} unless monthly_income.is_a?(Hash)
+- excluded = payload["excluded_category_spending_cents"]
+- excluded = {} unless excluded.is_a?(Hash)
+- unresolved = payload["unresolved_transactions"]
+- unresolved = {} unless unresolved.is_a?(Hash)
+
+%div{ class: "max-w-5xl mx-auto px-6 py-10 text-stone-900" }
+  %div{ class: "flex flex-wrap items-start justify-between gap-6" }
+    %div
+      = link_to "← Budget Proposals", budget_proposals_path, class: "text-sm underline text-stone-600 hover:text-stone-900"
+      %h1{ class: "mt-3 text-3xl font-semibold" }= @proposal.month.strftime("%B %Y")
+      %p{ class: "mt-2 text-stone-700" }
+        Budget proposal ·
+        %strong= budget_proposal_status(@proposal, validation: @validation)
+
+    %div{ class: "flex flex-wrap items-center gap-3" }
+      - if @proposal.applied?
+        = link_to "View Budget", budget_month_path(month: @proposal.budget_month.month.strftime("%Y-%m")), class: "border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
+      - else
+        - if @validation.valid? && @budget_month.nil?
+          = button_to "Approve and Create Budget",
+            approve_budget_proposal_path(@proposal),
+            method: :post,
+            form: { data: { turbo_confirm: "Approve this proposal and create the #{@proposal.month.strftime('%B %Y')} budget?" } },
+            class: "border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-700"
+        = button_to "Delete Proposal",
+          budget_proposal_path(@proposal),
+          method: :delete,
+          form: { data: { turbo_confirm: "Delete this draft budget proposal?" } },
+          class: "border border-red-700 px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+
+  - if @budget_month && !@proposal.applied?
+    %div{ class: "mt-6 border border-amber-300 bg-amber-50 p-4 text-sm" }
+      A budget already exists for this month, so this proposal cannot be approved.
+      = link_to "View the existing budget", budget_month_path(month: @budget_month.month.strftime("%Y-%m")), class: "ml-1 underline font-medium"
+
+  %div{ class: "mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4" }
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Available income
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.proposed_income_cents / 100.0)
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Proposed expenses
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.proposed_expense_cents / 100.0)
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Proposed savings
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.proposed_savings_cents / 100.0)
+    %div{ class: "border border-stone-200 p-4" }
+      %div{ class: "text-sm text-stone-600" } Amount remaining
+      %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@proposal.amount_remaining_cents / 100.0)
+
+  %div{ class: "mt-4 border border-stone-200 p-4 text-sm" }
+    %div{ class: "flex flex-wrap gap-x-8 gap-y-2" }
+      %div
+        %span{ class: "text-stone-600" } Status:
+        %strong= budget_proposal_status(@proposal, validation: @validation)
+      %div
+        %span{ class: "text-stone-600" } Income basis:
+        %strong= payload.fetch("planning_baseline", "Not recorded").to_s.humanize
+      %div
+        %span{ class: "text-stone-600" } Total assigned:
+        %strong= number_to_currency(@proposal.total_assigned_cents / 100.0)
+      %div
+        %span{ class: "text-stone-600" } Generated:
+        %strong= @proposal.created_at.strftime("%B %-d, %Y at %-I:%M %p")
+
+  - warning_items = @validation.errors + @validation.warnings
+  - uncategorized_cents = excluded.fetch("Uncategorized", 0).to_i
+  - credit_card_cents = excluded.fetch("Credit Card Payments", 0).to_i
+  - if warning_items.any? || uncategorized_cents.positive? || credit_card_cents.positive? || unresolved.fetch("count", 0).to_i.positive?
+    %section{ class: "mt-8 border border-amber-300 bg-amber-50 p-5" }
+      %h2{ class: "text-lg font-semibold" } Warnings
+      %ul{ class: "mt-3 list-disc space-y-1 pl-5 text-sm" }
+        - if uncategorized_cents.positive?
+          %li= "Excluded Uncategorized spending: #{number_to_currency(uncategorized_cents / 100.0)}"
+        - if credit_card_cents.positive?
+          %li= "Excluded Credit Card Payments: #{number_to_currency(credit_card_cents / 100.0)}"
+        - if unresolved.fetch("count", 0).to_i.positive?
+          %li
+            = "#{unresolved.fetch('count').to_i} unresolved transactions totaling #{number_to_currency(unresolved.fetch('amount_cents', 0).to_i / 100.0)} may affect this proposal."
+        - warning_items.each do |warning|
+          %li= warning
+
+  %section{ class: "mt-10" }
+    %h2{ class: "text-xl font-semibold" } Income calculation
+    %p{ class: "mt-2 text-sm text-stone-700" }
+      The proposal uses scheduled recurring income for the budget month and compares it with recurring paycheck history.
+
+    - if monthly_income.present?
+      %div{ class: "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" }
+        - monthly_income.each do |month, cents|
+          %div{ class: "border border-stone-200 p-3" }
+            %div{ class: "text-xs text-stone-600" }= budget_proposal_month_label(month)
+            %div{ class: "mt-1 font-medium" }= number_to_currency(cents.to_i / 100.0)
+      %p{ class: "mt-3 text-sm" }
+        Six-month paycheck average:
+        %strong= number_to_currency(payload.fetch("recurring_outside_income_averages_cents", {}).fetch("6", 0).to_i / 100.0)
+
+  %section{ class: "mt-10" }
+    %div{ class: "flex items-end justify-between" }
+      %h2{ class: "text-xl font-semibold" } Category assignments
+      %div{ class: "text-sm text-stone-600" }= "#{@proposal.proposed_categories.length} categories"
+
+    %div{ class: "mt-3 overflow-x-auto border border-stone-200" }
+      %table{ class: "w-full min-w-max text-sm" }
+        %thead
+          %tr{ class: "border-b border-stone-200 bg-stone-50" }
+            %th{ class: "p-3 text-left" } Category
+            %th{ class: "p-3 text-left" } Basis
+            %th{ class: "p-3 text-right" } 3-month avg.
+            %th{ class: "p-3 text-right" } 6-month avg.
+            %th{ class: "p-3 text-right" } 12-month avg.
+            %th{ class: "p-3 text-right" } Proposed
+        %tbody
+          - @proposal.proposed_categories.each do |row|
+            - averages = row.fetch("average_spending_cents", {})
+            %tr{ class: "border-t border-stone-200" }
+              %td{ class: "p-3 font-medium" }= row.fetch("category_name", "Category ##{row['category_id']}")
+              %td{ class: "p-3 text-stone-700" }= budget_proposal_rationale(row)
+              %td{ class: "p-3 text-right text-stone-700" }= number_to_currency(averages.fetch("3", 0).to_i / 100.0)
+              %td{ class: "p-3 text-right text-stone-700" }= number_to_currency(averages.fetch("6", 0).to_i / 100.0)
+              %td{ class: "p-3 text-right text-stone-700" }= number_to_currency(averages.fetch("12", 0).to_i / 100.0)
+              %td{ class: "p-3 text-right font-semibold" }= number_to_currency(row.fetch("proposed_cents", 0).to_i / 100.0)

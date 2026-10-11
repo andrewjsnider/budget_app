@@ -57,6 +57,7 @@ module FinancialPlanning
         month: @month.iso8601,
         planning_baseline: "recurring_outside_income",
         recurring_outside_income_cents: recurring_income,
+        recurring_outside_income_monthly_totals_cents: recurring_outside_income_monthly_totals(6),
         total_outside_income_previous_month_cents: total_outside_income_for(@month.prev_month),
         outside_income_averages_cents: HISTORY_WINDOWS.to_h { |months| [ months.to_s, average_outside_income(months) ] },
         recurring_outside_income_averages_cents: HISTORY_WINDOWS.to_h { |months| [ months.to_s, average_recurring_outside_income(months) ] },
@@ -68,6 +69,8 @@ module FinancialPlanning
         buffer_basis_points: BUFFER_BASIS_POINTS,
         proposed_savings_cents: savings,
         sinking_funds: { supported: false, reason: "No sinking-fund model exists" },
+        excluded_category_spending_cents: excluded_category_spending,
+        unresolved_transactions: unresolved_transactions,
         exclusions: {
           transfer_kinds: TransactionClassification::TRANSFER_KINDS,
           recurring_income_excludes: %w[windfall reimbursement refund]
@@ -106,14 +109,22 @@ module FinancialPlanning
     end
 
     def average_recurring_outside_income(months)
+      months_range(months).sum { |month| recurring_outside_income_for(month) } / months
+    end
+
+    def recurring_outside_income_monthly_totals(months)
+      months_range(months).to_h do |month|
+        [ month.iso8601, recurring_outside_income_for(month) ]
+      end
+    end
+
+    def recurring_outside_income_for(month)
       excluded = TransactionClassification.where(kind: %w[windfall reimbursement refund]).select(:transaction_id)
-      months_range(months).sum do |month|
-        external_transactions.where.not(id: excluded)
-          .joins(:category)
-          .where(occurred_on: month..month.end_of_month, categories: { kind: "income" })
-          .where("transactions.amount_cents > 0")
-          .sum(:amount_cents)
-      end / months
+      external_transactions.where.not(id: excluded)
+        .joins(:category)
+        .where(occurred_on: month..month.end_of_month, categories: { kind: "income" })
+        .where("transactions.amount_cents > 0")
+        .sum(:amount_cents)
     end
 
     def historical_category_spending
@@ -149,6 +160,30 @@ module FinancialPlanning
           rationale: "max(previous_budget, three_month_average, recurring_obligation)"
         }
       end
+    end
+
+    def excluded_category_spending
+      start_on = @month.prev_month(HISTORY_WINDOWS.max)
+      end_on = @month - 1.day
+
+      NON_BUDGET_CATEGORY_NAMES.to_h do |name|
+        signed_cents = external_transactions.joins(:category)
+          .where(occurred_on: start_on..end_on, categories: { name: })
+          .sum(:amount_cents)
+        [ name, [ -signed_cents, 0 ].max ]
+      end
+    end
+
+    def unresolved_transactions
+      start_on = @month.prev_month(HISTORY_WINDOWS.max)
+      end_on = @month - 1.day
+      entries = StatementEntry.where(status: "parsed", resolution_status: %w[unresolved ambiguous])
+        .where("COALESCE(transaction_on, posted_on) BETWEEN ? AND ?", start_on, end_on)
+
+      {
+        count: entries.count,
+        amount_cents: entries.sum("ABS(amount_cents)")
+      }
     end
 
     def months_range(months)

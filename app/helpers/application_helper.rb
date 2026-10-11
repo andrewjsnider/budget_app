@@ -27,4 +27,26 @@ module ApplicationHelper
 
     amount
   end
+
+  def budget_proposal_status(proposal, validation: nil)
+    return "Applied" if proposal.applied?
+
+    validation ||= BudgetProposals::Validation.call(proposal)
+    validation.valid? ? "Ready" : "Invalid"
+  end
+
+  def budget_proposal_rationale(row)
+    rationale = row["rationale"].to_s
+    return "Recurring obligation" if row["recurring_obligation_cents"].to_i == row["proposed_cents"].to_i && row["proposed_cents"].to_i.positive?
+    return "Prior budget" if row["previous_budget_cents"].to_i == row["proposed_cents"].to_i && row["proposed_cents"].to_i.positive?
+    return "3-month spending average" if rationale.include?("three_month_average")
+
+    rationale.presence&.humanize || "Proposal calculation"
+  end
+
+  def budget_proposal_month_label(value)
+    Date.iso8601(value.to_s).strftime("%b %Y")
+  rescue Date::Error
+    value.to_s
+  end
 end

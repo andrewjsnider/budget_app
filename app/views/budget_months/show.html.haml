@@ -3,6 +3,7 @@
     %div
       %h1{ class: "text-3xl font-semibold" } Budget
       %p{ class: "mt-2 text-stone-700" }= @month.strftime("%B %Y")
+      = link_to "Budget Proposals", budget_proposals_path, class: "mt-2 inline-block text-sm underline hover:text-stone-600"
 
     = form_with url: budget_path, method: :get, class: "flex items-end gap-3" do |f|
       - if @budget_sort.present?

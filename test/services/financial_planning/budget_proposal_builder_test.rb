@@ -38,6 +38,8 @@ class FinancialPlanning::BudgetProposalBuilderTest < ActiveSupport::TestCase
     assert_equal 500_000, proposal[:total_outside_income_previous_month_cents]
     assert_equal 166_666, proposal[:outside_income_averages_cents].fetch("3")
     assert_equal 133_333, proposal[:recurring_outside_income_averages_cents].fetch("3")
+    assert_equal 6, proposal[:recurring_outside_income_monthly_totals_cents].length
+    assert_equal 400_000, proposal[:recurring_outside_income_monthly_totals_cents].fetch(history_month.iso8601)
     assert_equal 30_000, proposal[:historical_category_spending_cents].fetch("3").fetch(expense.id.to_s)
     assert_equal TransactionClassification::TRANSFER_KINDS, proposal.dig(:exclusions, :transfer_kinds)
   end
@@ -77,5 +79,7 @@ class FinancialPlanning::BudgetProposalBuilderTest < ActiveSupport::TestCase
     assert_equal 3_333, history.fetch(normal.id.to_s)
     refute history.key?(uncategorized.id.to_s)
     refute history.key?(card_payments.id.to_s)
+    assert_equal 20_000, proposal.fetch(:excluded_category_spending_cents).fetch("Uncategorized")
+    assert_equal 30_000, proposal.fetch(:excluded_category_spending_cents).fetch("Credit Card Payments")
   end
 end

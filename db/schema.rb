@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_10_230000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,10 +54,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_10_230000) do
     t.jsonb "proposal", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "budget_month_id"
+    t.datetime "applied_at"
+    t.index ["budget_month_id"], name: "index_budget_proposals_on_budget_month_id", unique: true
     t.index ["month", "input_digest"], name: "index_budget_proposals_on_month_and_input_digest", unique: true
     t.check_constraint "EXTRACT(day FROM month) = 1::numeric", name: "budget_proposals_month_first_day"
     t.check_constraint "input_digest::text ~ '^[0-9a-f]{64}$'::text", name: "budget_proposals_input_digest"
-    t.check_constraint "status::text = 'draft'::text", name: "budget_proposals_draft_only"
+    t.check_constraint "status::text = 'draft'::text AND budget_month_id IS NULL AND applied_at IS NULL OR status::text = 'applied'::text AND budget_month_id IS NOT NULL AND applied_at IS NOT NULL", name: "budget_proposals_application_fields"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'applied'::character varying]::text[])", name: "budget_proposals_status"
   end
 
   create_table "categories", force: :cascade do |t|
@@ -324,6 +328,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_10_230000) do
 
   add_foreign_key "budget_items", "budget_months"
   add_foreign_key "budget_items", "categories"
+  add_foreign_key "budget_proposals", "budget_months", on_delete: :restrict
   add_foreign_key "income_estimates", "income_sources"
   add_foreign_key "income_sources", "accounts"
   add_foreign_key "income_sources", "categories"
