@@ -16,6 +16,13 @@ class UtilitiesReportTest < ActiveSupport::TestCase
     create_transaction("2026-04-06", -10_000, @water)
     create_transaction("2026-01-07", -99_999, @groceries)
     create_transfer("2026-02-15", 50_000)
+
+    create_transaction("2025-01-05", -9_000, @electric)
+    create_transaction("2025-01-10", 1_000, @electric)
+    create_transaction("2025-02-05", -5_000, @electric)
+    create_transaction("2025-03-05", -4_000, @water)
+    create_transaction("2025-04-05", -15_000, @electric)
+    create_transaction("2025-04-06", -8_000, @water)
   end
 
   test "aggregates signed utility spending by month with zeros and exclusions" do
@@ -42,6 +49,59 @@ class UtilitiesReportTest < ActiveSupport::TestCase
     assert_equal [ @electric, 40_000 ], report.highest_category
   end
 
+  test "calculates full calendar year totals and comparison" do
+    report = UtilitiesReport.new(from: Date.new(2026, 1, 1), to: Date.new(2026, 12, 1))
+
+    assert_equal "Year total", report.period_label
+    assert_equal({ 2026 => 62_000 }, report.yearly_totals_cents)
+    assert_equal 62_000, report.current_period_cents
+    assert_equal 40_000, report.previous_period_cents
+    assert_equal 22_000, report.year_over_year_change_cents
+    assert_in_delta 55.0, report.year_over_year_change_percentage, 0.001
+  end
+
+  test "compares a partial year to the same year-to-date period" do
+    report = build_report
+
+    assert_equal "Year to date", report.period_label
+    assert_equal Date.new(2025, 1, 1), report.comparison_from
+    assert_equal Date.new(2025, 4, 1), report.comparison_to
+    assert_equal 62_000, report.current_period_cents
+    assert_equal 40_000, report.previous_period_cents
+  end
+
+  test "compares an arbitrary period to equivalent months last year" do
+    report = UtilitiesReport.new(from: Date.new(2026, 2, 1), to: Date.new(2026, 4, 1))
+
+    assert_equal "Selected period", report.period_label
+    assert_equal 47_000, report.current_period_cents
+    assert_equal 32_000, report.previous_period_cents
+    assert_equal 15_000, report.year_over_year_change_cents
+    assert_in_delta 46.875, report.year_over_year_change_percentage, 0.001
+  end
+
+  test "omits year-over-year percentage when the previous period is zero" do
+    create_transaction("2026-05-05", -5_000, @electric)
+    report = UtilitiesReport.new(from: Date.new(2026, 5, 1), to: Date.new(2026, 5, 1))
+
+    assert_equal 5_000, report.current_period_cents
+    assert_equal 0, report.previous_period_cents
+    assert_equal 5_000, report.year_over_year_change_cents
+    assert_nil report.year_over_year_change_percentage
+  end
+
+  test "aligns rolling period months with the same months last year" do
+    report = UtilitiesReport.new(from: Date.new(2025, 11, 1), to: Date.new(2026, 10, 1))
+    current, previous = report.year_over_year_chart
+    expected_months = %w[Nov Dec Jan Feb Mar Apr May Jun Jul Aug Sep Oct]
+
+    assert_equal expected_months, current[:data].keys
+    assert_equal expected_months, previous[:data].keys
+    assert_equal 150.0, current[:data].fetch("Jan")
+    assert_equal 80.0, previous[:data].fetch("Jan"), "prior-year refunds should reduce comparison spend"
+    assert_equal({ 2025 => 0, 2026 => 62_000 }, report.yearly_totals_cents)
+  end
+
   test "calculates utility trends and omits percentage when previous month is zero" do
     trends = build_report.category_trends.index_by { |trend| trend.category.name }
     electric = trends.fetch("Electric")
@@ -60,6 +120,16 @@ class UtilitiesReportTest < ActiveSupport::TestCase
     assert_equal 3_000, water.change_cents
     assert_in_delta 42.857, water.change_percentage, 0.001
     refute water.new_this_month?
+
+    assert_equal 40_000, electric.current_period_cents
+    assert_equal 28_000, electric.previous_period_cents
+    assert_equal 12_000, electric.year_over_year_change_cents
+    assert_in_delta 42.857, electric.year_over_year_change_percentage, 0.001
+
+    assert_equal 22_000, water.current_period_cents
+    assert_equal 12_000, water.previous_period_cents
+    assert_equal 10_000, water.year_over_year_change_cents
+    assert_in_delta 83.333, water.year_over_year_change_percentage, 0.001
   end
 
   test "preserves negative net spending when credits exceed charges" do

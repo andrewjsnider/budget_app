@@ -20,29 +20,58 @@
     - highest_month = @report.highest_month
     - highest_category = @report.highest_category
 
-    %section{ class: "mt-8 grid grid-cols-1 border border-stone-200 sm:grid-cols-2 lg:grid-cols-4" }
-      %div{ class: "border-b border-stone-200 p-4 sm:border-r lg:border-b-0" }
+    %section{ class: "mt-8 grid grid-cols-1 gap-px border border-stone-200 bg-stone-200 sm:grid-cols-2 lg:grid-cols-4" }
+      %div{ class: "bg-white p-4" }
         %div{ class: "text-sm text-stone-600" } Latest month
         %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@report.latest_month_cents / 100.0)
         %div{ class: "mt-1 text-xs text-stone-500" }= @report.latest_month&.strftime("%B %Y") || "No month selected"
-      %div{ class: "border-b border-stone-200 p-4 lg:border-b-0 lg:border-r" }
+      %div{ class: "bg-white p-4" }
         %div{ class: "text-sm text-stone-600" } Monthly average
         %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@report.average_monthly_cents / 100.0)
         %div{ class: "mt-1 text-xs text-stone-500" } Across the selected range
-      %div{ class: "border-b border-stone-200 p-4 sm:border-b-0 sm:border-r" }
+      %div{ class: "bg-white p-4" }
+        %div{ class: "text-sm text-stone-600" }= @report.period_label
+        %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@report.current_period_cents / 100.0)
+        %div{ class: "mt-1 text-xs text-stone-500" }= "#{@from.strftime('%b %Y')}–#{@to.strftime('%b %Y')}"
+      %div{ class: "bg-white p-4" }
+        %div{ class: "text-sm text-stone-600" } Same period last year
+        %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency(@report.previous_period_cents / 100.0)
+        %div{ class: "mt-1 text-xs text-stone-500" }= "#{@report.comparison_from.strftime('%b %Y')}–#{@report.comparison_to.strftime('%b %Y')}"
+      %div{ class: "bg-white p-4" }
+        %div{ class: "text-sm text-stone-600" } Year-over-year change
+        %div{ class: "mt-1 text-xl font-semibold" }= signed_currency(@report.year_over_year_change_cents)
+        - if @report.year_over_year_change_percentage
+          %div{ class: "mt-1 text-xs text-stone-500" }= number_to_percentage(@report.year_over_year_change_percentage, precision: 1)
+        - else
+          %div{ class: "mt-1 text-xs text-stone-500" } No percentage — prior period is $0
+      %div{ class: "bg-white p-4" }
         %div{ class: "text-sm text-stone-600" } Highest month
         %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency((highest_month&.last || 0) / 100.0)
         %div{ class: "mt-1 text-xs text-stone-500" }= highest_month&.first&.strftime("%B %Y") || "No month selected"
-      %div{ class: "p-4" }
+      %div{ class: "bg-white p-4" }
         %div{ class: "text-sm text-stone-600" } Largest utility
         %div{ class: "mt-1 text-xl font-semibold" }= number_to_currency((highest_category&.last || 0) / 100.0)
         %div{ class: "mt-1 text-xs text-stone-500" }= highest_category&.first&.name || "No utility spending"
+
+    - if @report.yearly_totals_cents.length > 1
+      %section{ class: "mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 border border-stone-200 px-4 py-3" }
+        %h2{ class: "text-sm font-semibold" } Yearly totals in selected range
+        - @report.yearly_totals_cents.each do |year, cents|
+          %div{ class: "text-sm" }
+            %span{ class: "text-stone-500" }= year
+            %span{ class: "ml-2 font-medium" }= number_to_currency(cents / 100.0)
 
     %section{ class: "mt-10" }
       %h2{ class: "text-xl font-semibold" } Monthly utility spending
       %p{ class: "mt-1 text-sm text-stone-600" } Total utility spend for each month in the selected range
       %div{ class: "mt-4 border border-stone-200 p-4" }
         = line_chart @report.monthly_totals_chart, height: "320px", prefix: "$", thousands: ",", colors: ["#57534e"], curve: false, points: false, library: { plugins: { legend: { display: false } } }
+
+    %section{ class: "mt-10" }
+      %h2{ class: "text-xl font-semibold" } Year-over-year comparison
+      %p{ class: "mt-1 text-sm text-stone-600" } The selected months aligned with the same months one year earlier
+      %div{ class: "mt-4 border border-stone-200 p-4" }
+        = line_chart @report.year_over_year_chart, height: "320px", prefix: "$", thousands: ",", colors: ["#57534e", "#a8a29e"], curve: false, points: false, library: { plugins: { legend: { position: "bottom" } } }
 
     %section{ class: "mt-10" }
       %h2{ class: "text-xl font-semibold" } Spending by utility over time
@@ -83,6 +112,20 @@
                 - else
                   %div{ class: "mt-1 font-medium" }= signed_currency(trend.change_cents)
                   %div{ class: "text-xs text-stone-500" }= number_to_percentage(trend.change_percentage, precision: 1)
+            %div{ class: "mt-4 grid grid-cols-3 gap-4 border-t border-stone-200 pt-3 text-sm" }
+              %div
+                %div{ class: "text-stone-500" } Selected period
+                %div{ class: "mt-1 font-medium" }= number_to_currency(trend.current_period_cents / 100.0)
+              %div
+                %div{ class: "text-stone-500" } Same period last year
+                %div{ class: "mt-1 font-medium" }= number_to_currency(trend.previous_period_cents / 100.0)
+              %div
+                %div{ class: "text-stone-500" } YoY change
+                %div{ class: "mt-1 font-medium" }= signed_currency(trend.year_over_year_change_cents)
+                - if trend.year_over_year_change_percentage
+                  %div{ class: "text-xs text-stone-500" }= number_to_percentage(trend.year_over_year_change_percentage, precision: 1)
+                - else
+                  %div{ class: "text-xs text-stone-500" } No prior spend
             %div{ class: "mt-3" }
               = line_chart @report.trend_chart(trend), height: "72px", prefix: "$", thousands: ",", colors: ["#78716c"], curve: false, points: false, library: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
 
